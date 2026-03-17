@@ -147,10 +147,25 @@ body{background:var(--bg-0);color:var(--text);font-family:'JetBrains Mono',monos
   <!-- Exchange Data Panel -->
 
   <div class="panel" id="p-exdata">
-    <div class="p-title"><span>거래소 데이터 ─ DERIVATIVES</span><span class="p-title-r" style="color:var(--text-dim);font-size:9px" id="ex-sym"></span></div>
-    <div class="ex-grid" id="ex-grid"></div>
-    <div id="ex-lsbar"></div>
-    <div id="ex-cvd"></div>
+    <div class="p-title">
+      <span>거래소 데이터 ─ DERIVATIVES</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="view-tog">
+          <button class="vt-btn active" data-panel="ex" data-view="dash">DASH</button>
+          <button class="vt-btn" data-panel="ex" data-view="chart">CHART</button>
+        </div>
+        <span class="p-title-r" style="color:var(--text-dim);font-size:9px" id="ex-sym"></span>
+      </div>
+    </div>
+    <div id="ex-dash">
+      <div class="ex-grid" id="ex-grid"></div>
+      <div id="ex-lsbar"></div>
+      <div id="ex-cvd"></div>
+    </div>
+    <div id="ex-chart" style="display:none">
+      <div class="ind-chart-area"><canvas id="exCanvas"></canvas></div>
+      <div class="legend" id="exLg"></div>
+    </div>
     <div id="ex-interp"></div>
   </div>
 
@@ -455,52 +470,62 @@ async function loadAndRender(){
 // ═══════════════════════════════════════════════════════════
 const FAPI="https://fapi.binance.com/fapi/v1";
 let exData={};
+let exView="dash";
 
 async function fetchExchangeData(symbol){
-  const d={symbol:symbol,funding:null,oi:null,oiPrev:null,lsRatio:null,takerBuyVol:null,takerSellVol:null};
-  // 1. Funding Rate
+  const d={symbol:symbol,funding:null,oi:null,oiPrev:null,lsRatio:null,takerBuyVol:null,takerSellVol:null,
+    fundingHist:[],oiHist:[],lsHist:[],cvdHist:[]};
+  // 1. Funding Rate (current)
   try{
     const r=await fetch(FAPI+"/premiumIndex?symbol="+symbol);
     const j=await r.json();
     d.funding=parseFloat(j.lastFundingRate)*100;
     d.markPrice=parseFloat(j.markPrice);
   }catch(e){console.error("Funding:",e);}
-  // 2. Open Interest
+  // 2. Funding Rate History (for chart)
+  try{
+    const r=await fetch(FAPI+"/fundingRate?symbol="+symbol+"&limit=50");
+    const j=await r.json();
+    d.fundingHist=j.map(x=>({t:x.fundingTime,v:parseFloat(x.fundingRate)*100}));
+  }catch(e){console.error("Funding hist:",e);}
+  // 3. Open Interest (current)
   try{
     const r=await fetch(FAPI+"/openInterest?symbol="+symbol);
     const j=await r.json();
     d.oi=parseFloat(j.openInterest);
   }catch(e){console.error("OI:",e);}
-  // 3. OI history (for change %) - use 2 data points
+  // 4. OI History (for chart + change)
   try{
-    const r=await fetch("https://fapi.binance.com/futures/data/openInterestHist?symbol="+symbol+"&period=1h&limit=2");
+    const r=await fetch("https://fapi.binance.com/futures/data/openInterestHist?symbol="+symbol+"&period=1h&limit=48");
     const j=await r.json();
-    if(j.length>=2){d.oiPrev=parseFloat(j[0].sumOpenInterest);d.oiNow=parseFloat(j[1].sumOpenInterest);}
+    d.oiHist=j.map(x=>({t:x.timestamp,v:parseFloat(x.sumOpenInterest)}));
+    if(j.length>=2){d.oiPrev=parseFloat(j[j.length-2].sumOpenInterest);d.oiNow=parseFloat(j[j.length-1].sumOpenInterest);}
   }catch(e){console.error("OI hist:",e);}
-  // 4. Top Trader Long/Short Ratio
+  // 5. Top Trader L/S Ratio History (for chart)
   try{
-    const r=await fetch("https://fapi.binance.com/futures/data/topLongShortPositionRatio?symbol="+symbol+"&period=1h&limit=1");
+    const r=await fetch("https://fapi.binance.com/futures/data/topLongShortPositionRatio?symbol="+symbol+"&period=1h&limit=48");
     const j=await r.json();
-    if(j.length>0){d.longRatio=parseFloat(j[0].longAccount);d.shortRatio=parseFloat(j[0].shortAccount);d.lsRatio=parseFloat(j[0].longShortRatio);}
+    d.lsHist=j.map(x=>({t:x.timestamp,long:parseFloat(x.longAccount),short:parseFloat(x.shortAccount),ratio:parseFloat(x.longShortRatio)}));
+    if(j.length>0){const last=j[j.length-1];d.longRatio=parseFloat(last.longAccount);d.shortRatio=parseFloat(last.shortAccount);d.lsRatio=parseFloat(last.longShortRatio);}
   }catch(e){console.error("LS Ratio:",e);}
-  // 5. Taker Buy/Sell Volume (for CVD approximation)
+  // 6. Taker Buy/Sell Volume (for CVD chart)
   try{
-    const r=await fetch("https://fapi.binance.com/futures/data/takerlongshortRatio?symbol="+symbol+"&period=1h&limit=24");
+    const r=await fetch("https://fapi.binance.com/futures/data/takerlongshortRatio?symbol="+symbol+"&period=1h&limit=48");
     const j=await r.json();
     if(j.length>0){
       let totalBuy=0,totalSell=0;
-      j.forEach(x=>{totalBuy+=parseFloat(x.buyVol);totalSell+=parseFloat(x.sellVol);});
-      d.takerBuyVol=totalBuy;d.takerSellVol=totalSell;
-      d.cvd=totalBuy-totalSell;
-      // Recent 4h vs previous for momentum
-      if(j.length>=8){
-        let recentBuy=0,recentSell=0;
-        for(let i=j.length-4;i<j.length;i++){recentBuy+=parseFloat(j[i].buyVol);recentSell+=parseFloat(j[i].sellVol);}
-        d.recentCvd=recentBuy-recentSell;
-      }
+      const cvdSeries=[];let cumCvd=0;
+      j.forEach(x=>{
+        const bv=parseFloat(x.buyVol),sv=parseFloat(x.sellVol);
+        totalBuy+=bv;totalSell+=sv;cumCvd+=bv-sv;
+        cvdSeries.push({t:x.timestamp,v:cumCvd,buy:bv,sell:sv});
+      });
+      d.takerBuyVol=totalBuy;d.takerSellVol=totalSell;d.cvd=totalBuy-totalSell;
+      d.cvdHist=cvdSeries;
+      if(j.length>=8){let rb=0,rs=0;for(let i=j.length-4;i<j.length;i++){rb+=parseFloat(j[i].buyVol);rs+=parseFloat(j[i].sellVol);}d.recentCvd=rb-rs;}
     }
   }catch(e){console.error("Taker vol:",e);}
-  // 6. Global Long/Short Ratio (all traders)
+  // 7. Global L/S Ratio
   try{
     const r=await fetch("https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol="+symbol+"&period=1h&limit=1");
     const j=await r.json();
@@ -508,6 +533,98 @@ async function fetchExchangeData(symbol){
   }catch(e){console.error("Global LS:",e);}
   exData[symbol]=d;
   return d;
+}
+
+// ─── Exchange Data CHART ───
+function renderExChart(){
+  const sym=COINS[SC].sym;const d=exData[sym];
+  const canvas=document.getElementById("exCanvas");
+  if(!canvas||!d)return;
+  const rect=canvas.parentElement.getBoundingClientRect();
+  const dpr=window.devicePixelRatio||1;
+  const W=rect.width,H=380;
+  canvas.style.height=H+"px";canvas.width=W*dpr;canvas.height=H*dpr;
+  const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+
+  const pad={l:2,r:42,t:4,b:4};
+  const cW=W-pad.l-pad.r;
+  // 4 sub-panels stacked vertically
+  const panelH=(H-16)/4;
+  const panels=[
+    {label:"FUNDING RATE (%)",data:d.fundingHist.map(x=>x.v),color:"#FFD700",zeroLine:true},
+    {label:"OPEN INTEREST",data:d.oiHist.map(x=>x.v),color:"#00BFFF",zeroLine:false},
+    {label:"L/S RATIO (Top)",data:d.lsHist.map(x=>x.ratio),color:"#A87BD2",zeroLine:false,oneLine:true},
+    {label:"CVD (Cumulative)",data:d.cvdHist.map(x=>x.v),color:"#7BC86C",zeroLine:true,isHist:true},
+  ];
+
+  panels.forEach((p,pi)=>{
+    const yTop=pi*(panelH+4)+pad.t;
+    const data=p.data;
+    if(!data||data.length<2)return;
+    const n=data.length;
+    const tX=i=>pad.l+(i/(n-1))*cW;
+
+    let mn=Math.min(...data),mx=Math.max(...data);
+    if(p.oneLine){mn=Math.min(mn,0.8);mx=Math.max(mx,1.2);}
+    if(p.zeroLine){mn=Math.min(mn,0);mx=Math.max(mx,0);}
+    const rng=mx-mn||1;
+    const tY=v=>yTop+4+((mx-v)/rng)*(panelH-12);
+
+    // Panel background
+    ctx.fillStyle="rgba(18,17,14,0.6)";ctx.fillRect(pad.l,yTop,cW+pad.r,panelH);
+    // Panel label
+    ctx.fillStyle=p.color;ctx.globalAlpha=0.7;ctx.font="bold 8px JetBrains Mono";ctx.fillText(p.label,pad.l+4,yTop+10);ctx.globalAlpha=1;
+    // Y-axis values
+    ctx.fillStyle="#6B6040";ctx.font="7px JetBrains Mono";
+    ctx.fillText(mx>=100?mx.toFixed(0):mx.toFixed(4),W-pad.r+2,yTop+10);
+    ctx.fillText(mn>=100?mn.toFixed(0):mn.toFixed(4),W-pad.r+2,yTop+panelH-4);
+
+    // Zero/one line
+    if(p.zeroLine&&mn<0&&mx>0){
+      const zy=tY(0);
+      ctx.strokeStyle="rgba(138,128,96,0.3)";ctx.lineWidth=0.5;ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.moveTo(pad.l,zy);ctx.lineTo(W-pad.r,zy);ctx.stroke();ctx.setLineDash([]);
+    }
+    if(p.oneLine){
+      const oy=tY(1);
+      ctx.strokeStyle="rgba(138,128,96,0.3)";ctx.lineWidth=0.5;ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.moveTo(pad.l,oy);ctx.lineTo(W-pad.r,oy);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle="#6B6040";ctx.font="7px JetBrains Mono";ctx.fillText("1.0",W-pad.r+2,oy+3);
+    }
+
+    if(p.isHist){
+      // CVD as histogram bars
+      const barW2=Math.max(1,cW/n*0.7);
+      const zy=tY(0);
+      data.forEach((v,i)=>{
+        const x=tX(i);const h=Math.abs(tY(v)-zy);
+        ctx.fillStyle=v>=0?"rgba(123,200,108,0.5)":"rgba(232,115,74,0.5)";
+        if(v>=0)ctx.fillRect(x-barW2/2,tY(v),barW2,h);
+        else ctx.fillRect(x-barW2/2,zy,barW2,h);
+      });
+    }else{
+      // Line + area fill
+      ctx.beginPath();data.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+      ctx.lineTo(tX(n-1),yTop+panelH-4);ctx.lineTo(tX(0),yTop+panelH-4);ctx.closePath();
+      ctx.fillStyle=p.color+"12";ctx.fill();
+      // Line
+      ctx.beginPath();ctx.strokeStyle=p.color;ctx.lineWidth=1.5;ctx.globalAlpha=0.8;
+      data.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+      ctx.stroke();ctx.globalAlpha=1;
+    }
+
+    // Current value label
+    const lastVal=data[data.length-1];
+    ctx.fillStyle=p.color;ctx.font="bold 9px JetBrains Mono";
+    ctx.fillText(lastVal>=100?lastVal.toFixed(0):lastVal.toFixed(4),tX(n-1)-30,tY(lastVal)-6);
+
+    // Bottom separator
+    if(pi<3){ctx.strokeStyle="rgba(42,38,24,0.4)";ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(pad.l,yTop+panelH+1);ctx.lineTo(W-pad.r,yTop+panelH+1);ctx.stroke();}
+  });
+
+  // Legend
+  const lg=document.getElementById("exLg");
+  lg.innerHTML=`<div class="legend-item"><span class="lg-line" style="background:#FFD700"></span>Funding</div><div class="legend-item"><span class="lg-line" style="background:#00BFFF"></span>OI</div><div class="legend-item"><span class="lg-line" style="background:#A87BD2"></span>L/S Ratio</div><div class="legend-item"><span class="lg-line" style="background:#7BC86C"></span>CVD</div><div class="legend-item" style="color:var(--text-dim)">48h history · 1h interval</div>`;
 }
 
 function interpExData(d){
@@ -587,11 +704,17 @@ function interpExData(d){
 function renderExData(){
   const sym=COINS[SC].sym;
   const d=exData[sym];
-  document.getElementById("ex-sym").textContent=sym+" DERIVATIVES";
+  document.getElementById("ex-sym").textContent=sym;
   const grid=document.getElementById("ex-grid");
   const lsbar=document.getElementById("ex-lsbar");
   const cvdEl=document.getElementById("ex-cvd");
   const interpEl=document.getElementById("ex-interp");
+
+  // Toggle visibility
+  document.getElementById("ex-dash").style.display=exView==="dash"?"block":"none";
+  document.getElementById("ex-chart").style.display=exView==="chart"?"block":"none";
+
+  if(exView==="chart"){renderExChart();}
 
   if(!d){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-dim);padding:20px">로딩 중...</div>';return;}
 
@@ -694,8 +817,8 @@ async function init(){
 
 // Events
 document.querySelectorAll(".tf-tab").forEach(b=>{b.addEventListener("click",()=>{document.querySelectorAll(".tf-tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");ST=b.dataset.tf;const key=`${COINS[SC].sym}_${ST}`;delete cache[key];loadAndRender();});});
-document.querySelectorAll(".vt-btn").forEach(btn=>{btn.addEventListener("click",()=>{const panel=btn.dataset.panel,view=btn.dataset.view;btn.parentElement.querySelectorAll(".vt-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");if(panel==="cs1"){cs1View=view;renderCS1();}else{cs2View=view;renderCS2();}});});
-let rt;window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{if(D){renderChart();if(cs1View==="chart")renderCS1Chart();if(cs2View==="chart")renderCS2Chart();}},80);});
+document.querySelectorAll(".vt-btn").forEach(btn=>{btn.addEventListener("click",()=>{const panel=btn.dataset.panel,view=btn.dataset.view;btn.parentElement.querySelectorAll(".vt-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");if(panel==="cs1"){cs1View=view;renderCS1();}else if(panel==="cs2"){cs2View=view;renderCS2();}else if(panel==="ex"){exView=view;renderExData();}});});
+let rt;window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{if(D){renderChart();if(cs1View==="chart")renderCS1Chart();if(cs2View==="chart")renderCS2Chart();}if(exView==="chart")renderExChart();},80);});
 
 init();
 </script>
