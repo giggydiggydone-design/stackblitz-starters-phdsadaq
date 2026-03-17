@@ -1,0 +1,957 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Line,
+  Area,
+  Legend,
+} from "recharts";
+
+const BINANCE_FAPI_BASE = "https://fapi.binance.com";
+const WS_BASE = "wss://fstream.binance.com/ws";
+const STORAGE_KEY = "unified-dash-v2";
+const CHART_LIMIT = 400;
+
+const EMA_PERIODS = [10, 20, 60, 120, 200, 350];
+const LINE_COLORS = {
+  10: "#00e5ff",
+  20: "#00e676",
+  60: "#ffeb3b",
+  120: "#ff9800",
+  200: "#ff5252",
+  350: "#b388ff",
+};
+
+const FR_FIELDS = [
+  { key: "score", label: "Score", type: "number", step: 0.1 },
+  { key: "regime", label: "Regime", type: "select", options: ["BULL", "BEAR", "SIDE"] },
+  { key: "sigma", label: "Sigma", type: "number", step: 0.01 },
+  { key: "vwap", label: "VWAP", type: "number", step: 0.01 },
+  { key: "distPct", label: "거리%", type: "number", step: 0.01 },
+  { key: "lrDir", label: "LR방향", type: "select", options: ["UP", "DN"] },
+  { key: "cmf", label: "CMF", type: "number", step: 0.001 },
+  { key: "adx", label: "ADX", type: "number", step: 0.1 },
+  { key: "chop", label: "CHOP", type: "number", step: 0.1 },
+  { key: "hma", label: "HullMA", type: "select", options: ["정렬UP", "정렬DN", "혼재"] },
+  { key: "pos", label: "포지션", type: "select", options: ["없음", "LONG", "SHORT"] },
+  { key: "pnl", label: "PnL%", type: "number", step: 0.01 },
+  { key: "filterL", label: "필터L", type: "number", step: 1 },
+  { key: "filterS", label: "필터S", type: "number", step: 1 },
+  { key: "cooldown", label: "Cooldown", type: "number", step: 1 },
+  { key: "beTrail", label: "BE/Trail", type: "select", options: ["-/-", "BE/-", "BE/TR", "-/TR"] },
+];
+
+const CS_FACTORS = [
+  { key: "rvwapTrend", label: "RVWAP Trend", short: "RVT" },
+  { key: "rvwapRegime", label: "RVWAP Regime", short: "RVR" },
+  { key: "vwRsi", label: "VW-RSI", short: "VRI" },
+  { key: "vwMacd", label: "VW-MACD", short: "VMD" },
+  { key: "ttmSqueeze", label: "TTM Squeeze", short: "TTM" },
+  { key: "mfi", label: "MFI", short: "MFI" },
+  { key: "obvStruct", label: "OBV Structure", short: "OBV" },
+];
+
+const createMapFromPeriods = (initial = "") =>
+  Object.fromEntries(EMA_PERIODS.map((p) => [`p${p}`, initial]));
+
+const defaultState = () => ({
+  ticker: "BTCUSDT",
+  timeframe: "15m",
+  price: "",
+  fr: Object.fromEntries(FR_FIELDS.map((f) => [f.key, f.type === "select" ? f.options[0] : ""])),
+  cs: Object.fromEntries(CS_FACTORS.map((f) => [f.key, "0"])),
+  csTotal: "",
+  csSqueeze: "OFF",
+  ema: createMapFromPeriods(""),
+  rvwap: createMapFromPeriods(""),
+  emaAlign: "혼재",
+  rvwapAlign: "혼재",
+  notes: "",
+});
+
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+const sigmaZone = (s) => {
+  const a = Math.abs(s);
+  if (a > 2.618) return { label: s > 0 ? "FOMO" : "공황", color: "#ff1744" };
+  if (a > 1.618) return { label: s > 0 ? "과매수" : "과매도", color: "#ff9800" };
+  if (a > 0.618) return { label: s > 0 ? "상승" : "하락", color: "#ffeb3b" };
+  return { label: "중립", color: "#00e5ff" };
+};
+
+function num(v, fallback = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function formatNum(v, digits = 2) {
+  if (!Number.isFinite(Number(v))) return "—";
+  return Number(v).toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: digits,
+  });
+}
+
+function calcEMA(values, period) {
+  const alpha = 2 / (period + 1);
+  let prev = null;
+  return values.map((v, i) => {
+    if (i === 0) {
+      prev = v;
+      return v;
+    }
+    prev = alpha * v + (1 - alpha) * prev;
+    return prev;
+  });
+}
+
+function calcRollingVWAP(candles, period) {
+  const pvQueue = [];
+  const volQueue = [];
+  let pvSum = 0;
+  let volSum = 0;
+
+  return candles.map((c) => {
+    const typical = (c.high + c.low + c.close) / 3;
+    const pv = typical * c.volume;
+    pvQueue.push(pv);
+    volQueue.push(c.volume);
+    pvSum += pv;
+    volSum += c.volume;
+
+    if (pvQueue.length > period) {
+      pvSum -= pvQueue.shift();
+      volSum -= volQueue.shift();
+    }
+
+    return volSum === 0 ? c.close : pvSum / volSum;
+  });
+}
+
+function inferAlignment(seriesMap) {
+  const vals = EMA_PERIODS.map((p) => num(seriesMap[`p${p}`], NaN));
+  if (vals.some((v) => !Number.isFinite(v))) return "혼재";
+
+  const desc = vals.every((v, i) => i === 0 || vals[i - 1] > v);
+  const asc = vals.every((v, i) => i === 0 || vals[i - 1] < v);
+  if (desc) return "정배열";
+  if (asc) return "역배열";
+  return "혼재";
+}
+
+function tfToLabel(tf) {
+  return tf.replace("D", "d").replace("W", "w");
+}
+
+function buildPrompt(state, marketStats) {
+  const { ticker, timeframe, price, fr, cs, csTotal, csSqueeze, ema, rvwap, emaAlign, rvwapAlign, notes } = state;
+  const csScores = CS_FACTORS.map((f) => `${f.label}: ${cs[f.key]}`).join(", ");
+  const emaVals = EMA_PERIODS.map((p) => `EMA${p}=${ema[`p${p}`] || "?"}`).join(", ");
+  const rvwapVals = EMA_PERIODS.map((p) => `RVWAP${p}=${rvwap[`p${p}`] || "?"}`).join(", ");
+
+  return `당신은 크립토/주식 기술적 분석 전문가다. 아래 상태를 종합 분석하라.
+
+## 현재 상태
+- 종목: ${ticker} | TF: ${timeframe} | 현재가: ${price}
+- 24h 변동률: ${marketStats.priceChangePercent ?? "?"}% | 24h 고가: ${marketStats.highPrice ?? "?"} | 24h 저가: ${marketStats.lowPrice ?? "?"}
+
+### 1) Fib-Regime v3.4
+- Regime Score: ${fr.score} | Regime: ${fr.regime}
+- Sigma: ${fr.sigma} (구간: ${sigmaZone(parseFloat(fr.sigma) || 0).label})
+- VWAP: ${fr.vwap} | 거리: ${fr.distPct}%
+- LR 방향: ${fr.lrDir} | CMF: ${fr.cmf}
+- ADX: ${fr.adx} | CHOP: ${fr.chop}
+- HMA 정렬: ${fr.hma}
+- 포지션: ${fr.pos} | PnL: ${fr.pnl}% | BE/Trail: ${fr.beTrail}
+- 필터 점수: L=${fr.filterL}/4, S=${fr.filterS}/4
+- Cooldown: ${fr.cooldown}
+
+### 2) Confluence Sniper v2.0 (7팩터 합산)
+- 팩터별: ${csScores}
+- 합산: ${csTotal}/7
+- TTM Squeeze: ${csSqueeze}
+
+### 3) EMA + RVWAP 오버레이
+- ${emaVals}
+- ${rvwapVals}
+- EMA 정렬: ${emaAlign} | RVWAP 정렬: ${rvwapAlign}
+
+${notes ? `### 추가 메모\n${notes}` : ""}
+
+## 분석 지시
+다음 구조로 답하라. 각 섹션은 1-3문장으로 짧게.
+
+**[매크로 컨텍스트]** EMA/RVWAP 200 기준 대세 방향, 정배열/역배열 상태
+**[레짐 상태]** Fib-Regime의 현재 regime + CS 합산 스코어가 일치하는지, 불일치 시 의미
+**[모멘텀]** CMF/VW-MACD/MFI 방향 수렴 여부, 자금흐름 방향
+**[변동성]** CHOP/ADX/TTM Squeeze 조합 → 현재 추세 강도 vs 횡보 판단
+**[시그마 위치]** VWAP 대비 위치의 의미 (진입 적합/추격/과열)
+**[팩터 충돌]** 지표 간 모순이 있으면 지적
+**[종합 판단]** 위 분석을 1문장으로 요약 + 행동 옵션 2-3개 제시 (진입/관망/청산 등)
+- 확신도를 ●○○○○ ~ ●●●●● (5단계)로 표시
+- 직접 매수/매도 지시 금지. 조건부 시나리오로 제시.`;
+}
+
+function App() {
+  const [state, setState] = useState(defaultState);
+  const [aiResult, setAiResult] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("fr");
+  const [chartData, setChartData] = useState([]);
+  const [marketStats, setMarketStats] = useState({});
+  const [loadingMarket, setLoadingMarket] = useState(false);
+  const [marketError, setMarketError] = useState("");
+  const resultRef = useRef(null);
+  const wsRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setState((prev) => ({ ...prev, ...parsed }));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }, [state]);
+
+  const update = useCallback((section, key, val) => {
+    setState((prev) => ({
+      ...prev,
+      [section]: typeof prev[section] === "object" && !Array.isArray(prev[section])
+        ? { ...prev[section], [key]: val }
+        : val,
+    }));
+  }, []);
+
+  const updateTop = useCallback((key, val) => {
+    setState((prev) => ({ ...prev, [key]: val }));
+  }, []);
+
+  const fetchBinanceData = useCallback(async () => {
+    const symbol = state.ticker.trim().toUpperCase();
+    if (!symbol) return;
+
+    setLoadingMarket(true);
+    setMarketError("");
+
+    try {
+      const [kRes, pRes, tRes] = await Promise.all([
+        fetch(`${BINANCE_FAPI_BASE}/fapi/v1/klines?symbol=${symbol}&interval=${state.timeframe}&limit=${CHART_LIMIT}`),
+        fetch(`${BINANCE_FAPI_BASE}/fapi/v2/ticker/price?symbol=${symbol}`),
+        fetch(`${BINANCE_FAPI_BASE}/fapi/v1/ticker/24hr?symbol=${symbol}`),
+      ]);
+
+      if (!kRes.ok || !pRes.ok || !tRes.ok) {
+        throw new Error(`Binance 응답 오류 (${kRes.status}/${pRes.status}/${tRes.status})`);
+      }
+
+      const klines = await kRes.json();
+      const priceJson = await pRes.json();
+      const ticker24 = await tRes.json();
+
+      const candles = klines.map((k) => ({
+        openTime: Number(k[0]),
+        open: Number(k[1]),
+        high: Number(k[2]),
+        low: Number(k[3]),
+        close: Number(k[4]),
+        volume: Number(k[5]),
+        label: new Date(Number(k[0])).toLocaleString([], {
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      }));
+
+      const closes = candles.map((c) => c.close);
+      const emaSeries = Object.fromEntries(
+        EMA_PERIODS.map((p) => [p, calcEMA(closes, p)])
+      );
+      const rvwapSeries = Object.fromEntries(
+        EMA_PERIODS.map((p) => [p, calcRollingVWAP(candles, p)])
+      );
+
+      const merged = candles.map((c, i) => {
+        const row = { ...c };
+        EMA_PERIODS.forEach((p) => {
+          row[`ema${p}`] = emaSeries[p][i];
+          row[`rvwap${p}`] = rvwapSeries[p][i];
+        });
+        return row;
+      });
+
+      const last = merged[merged.length - 1];
+      const nextEMA = Object.fromEntries(
+        EMA_PERIODS.map((p) => [`p${p}`, last[`ema${p}`].toFixed(4)])
+      );
+      const nextRVWAP = Object.fromEntries(
+        EMA_PERIODS.map((p) => [`p${p}`, last[`rvwap${p}`].toFixed(4)])
+      );
+
+      const basisVwap = last.rvwap20 ?? last.close;
+      const distPct = basisVwap ? ((last.close - basisVwap) / basisVwap) * 100 : 0;
+
+      setChartData(merged);
+      setMarketStats(ticker24);
+      setState((prev) => ({
+        ...prev,
+        price: Number(priceJson.price).toFixed(4),
+        ema: nextEMA,
+        rvwap: nextRVWAP,
+        emaAlign: inferAlignment(nextEMA),
+        rvwapAlign: inferAlignment(nextRVWAP),
+        fr: {
+          ...prev.fr,
+          vwap: basisVwap.toFixed(4),
+          distPct: distPct.toFixed(3),
+        },
+      }));
+    } catch (err) {
+      setMarketError(err.message || "시장 데이터 로딩 실패");
+    } finally {
+      setLoadingMarket(false);
+    }
+  }, [state.ticker, state.timeframe]);
+
+  useEffect(() => {
+    fetchBinanceData();
+  }, [fetchBinanceData]);
+
+  useEffect(() => {
+    const symbol = state.ticker.trim().toLowerCase();
+    if (!symbol) return;
+
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
+    const ws = new WebSocket(`${WS_BASE}/${symbol}@ticker`);
+    wsRef.current = ws;
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data?.c) {
+          setState((prev) => ({ ...prev, price: Number(data.c).toFixed(4) }));
+          setMarketStats((prev) => ({
+            ...prev,
+            priceChangePercent: data.P,
+            highPrice: data.h,
+            lowPrice: data.l,
+            volume: data.v,
+          }));
+        }
+      } catch {
+        // ignore malformed frames
+      }
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [state.ticker]);
+
+  const runAI = async () => {
+    setAiLoading(true);
+    setAiResult("");
+    try {
+      const prompt = buildPrompt(state, marketStats);
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // 실제 배포 시 서버 프록시로 옮기는 게 안전함
+          "x-api-key": "YOUR_ANTHROPIC_API_KEY",
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`AI 응답 실패 (${res.status})`);
+      }
+
+      const data = await res.json();
+      const text = data.content?.map((b) => b.text || "").join("\n") || "응답 없음";
+      setAiResult(text);
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    } catch (e) {
+      setAiResult(`API 호출 실패: ${e.message}`);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const reset = () => {
+    if (window.confirm("모든 입력을 초기화합니다.")) {
+      const fresh = defaultState();
+      setState(fresh);
+      setAiResult("");
+      setChartData([]);
+      setMarketStats({});
+    }
+  };
+
+  const sigma = num(state.fr.sigma, 0);
+  const sz = sigmaZone(sigma);
+  const csTotal = num(state.csTotal, 0);
+  const frBull = state.fr.regime === "BULL";
+  const frBear = state.fr.regime === "BEAR";
+  const csBull = csTotal >= 5;
+  const csBear = csTotal <= -5;
+  const agreement = (frBull && csBull) || (frBear && csBear);
+  const conflict = (frBull && csBear) || (frBear && csBull);
+
+  const latestOverlayRows = useMemo(
+    () => EMA_PERIODS.map((p) => ({
+      period: p,
+      color: LINE_COLORS[p],
+      ema: state.ema[`p${p}`],
+      rvwap: state.rvwap[`p${p}`],
+    })),
+    [state.ema, state.rvwap]
+  );
+
+  return (
+    <div style={styles.root}>
+      <div style={styles.header}>
+        <div style={styles.headerLeft}>
+          <h1 style={styles.title}>UNIFIED SIGNAL DESK</h1>
+          <span style={styles.subtitle}>Binance Auto Feed × EMA/RVWAP Overlay × AI Interpretation</span>
+        </div>
+        <div style={styles.headerRight}>
+          <input
+            style={styles.tickerInput}
+            value={state.ticker}
+            onChange={(e) => updateTop("ticker", e.target.value.toUpperCase())}
+            placeholder="BTCUSDT"
+          />
+          <select style={styles.tfSelect} value={state.timeframe} onChange={(e) => updateTop("timeframe", e.target.value)}>
+            {["1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "1d", "1w"].map((t) => (
+              <option key={t} value={t}>{tfToLabel(t)}</option>
+            ))}
+          </select>
+          <button style={styles.syncBtn} onClick={fetchBinanceData} disabled={loadingMarket}>
+            {loadingMarket ? "동기화 중..." : "바이낸스 동기화"}
+          </button>
+        </div>
+      </div>
+
+      <div style={styles.statusBar}>
+        <StatusChip label="Price" value={formatNum(state.price, 4)} color="#ffeb3b" />
+        <StatusChip label="24h %" value={`${formatNum(marketStats.priceChangePercent, 2)}%`} color={num(marketStats.priceChangePercent) >= 0 ? "var(--c-bull)" : "var(--c-bear)"} />
+        <StatusChip label="Regime" value={state.fr.regime} color={state.fr.regime === "BULL" ? "var(--c-bull)" : state.fr.regime === "BEAR" ? "var(--c-bear)" : "var(--c-muted)"} />
+        <StatusChip label="Sigma" value={`${sigma.toFixed(2)}σ ${sz.label}`} color={sz.color} />
+        <StatusChip label="EMA Align" value={state.emaAlign} color={state.emaAlign === "정배열" ? "var(--c-bull)" : state.emaAlign === "역배열" ? "var(--c-bear)" : "var(--c-muted)"} />
+        <StatusChip label="RVWAP Align" value={state.rvwapAlign} color={state.rvwapAlign === "정배열" ? "var(--c-bull)" : state.rvwapAlign === "역배열" ? "var(--c-bear)" : "var(--c-muted)"} />
+        <StatusChip label="일치" value={agreement ? "AGREE" : conflict ? "CONFLICT" : "MIXED"} color={agreement ? "#00e5ff" : conflict ? "#ff9800" : "var(--c-muted)"} />
+      </div>
+
+      <SigmaGauge sigma={sigma} />
+
+      <div style={styles.chartCard}>
+        <div style={styles.chartHeader}>
+          <div>
+            <div style={styles.chartTitle}>PRICE + EMA / RVWAP OVERLAY</div>
+            <div style={styles.chartSub}>EMA = 실선 / RVWAP = 점선 · 같은 주기끼리 같은 색</div>
+          </div>
+          <div style={styles.chartMeta}>
+            <span>고가 {formatNum(marketStats.highPrice, 4)}</span>
+            <span>저가 {formatNum(marketStats.lowPrice, 4)}</span>
+            <span>거래량 {formatNum(marketStats.volume, 0)}</span>
+          </div>
+        </div>
+
+        <div style={{ width: "100%", height: 420 }}>
+          <ResponsiveContainer>
+            <ComposedChart data={chartData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
+              <XAxis dataKey="label" minTickGap={24} tick={{ fill: "#94a3b8", fontSize: 11 }} />
+              <YAxis domain={["auto", "auto"]} tick={{ fill: "#94a3b8", fontSize: 11 }} width={90} />
+              <Tooltip content={<ChartTooltip />} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Area type="monotone" dataKey="close" stroke="#cbd5e1" fill="#334155" fillOpacity={0.18} strokeWidth={1.3} name="Close" />
+              {EMA_PERIODS.map((p) => (
+                <Line key={`ema-${p}`} type="monotone" dataKey={`ema${p}`} stroke={LINE_COLORS[p]} dot={false} strokeWidth={1.9} name={`EMA ${p}`} />
+              ))}
+              {EMA_PERIODS.map((p) => (
+                <Line key={`rvwap-${p}`} type="monotone" dataKey={`rvwap${p}`} stroke={LINE_COLORS[p]} dot={false} strokeWidth={1.5} strokeDasharray="6 4" name={`RVWAP ${p}`} />
+              ))}
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div style={styles.overlayLegendGrid}>
+          {latestOverlayRows.map((row) => (
+            <div key={row.period} style={styles.overlayRow}>
+              <div style={{ ...styles.lineSwatch, background: row.color }} />
+              <span style={styles.overlayPeriod}>{row.period}</span>
+              <span style={styles.overlayText}>EMA {formatNum(row.ema, 4)}</span>
+              <span style={styles.overlayTextMuted}>RVWAP {formatNum(row.rvwap, 4)}</span>
+            </div>
+          ))}
+        </div>
+        {marketError ? <div style={styles.errorBox}>{marketError}</div> : null}
+      </div>
+
+      <div style={styles.tabRow}>
+        {[
+          { id: "fr", label: "Fib-Regime v3.4" },
+          { id: "cs", label: "Confluence Sniper" },
+          { id: "ema", label: "EMA + RVWAP" },
+        ].map((tab) => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ ...styles.tab, ...(activeTab === tab.id ? styles.tabActive : {}) }}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={styles.panelContainer}>
+        {activeTab === "fr" && (
+          <div style={styles.panel}>
+            <div style={styles.noticeBox}>
+              Binance에서 자동으로 채워지는 값: 현재가, 차트, EMA/RVWAP, FR의 VWAP/거리%, 정렬 상태.
+              나머지 FR/CS 값은 네 커스텀 지표 수식이 없으면 자동 계산 불가라서 수동 입력 유지다.
+            </div>
+            <div style={styles.grid3}>
+              {FR_FIELDS.map((f) => (
+                <div key={f.key} style={styles.fieldGroup}>
+                  <label style={styles.fieldLabel}>{f.label}</label>
+                  {f.type === "select" ? (
+                    <select style={styles.select} value={state.fr[f.key]} onChange={(e) => update("fr", f.key, e.target.value)}>
+                      {f.options.map((o) => <option key={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <input style={styles.input} type="number" step={f.step} value={state.fr[f.key]} onChange={(e) => update("fr", f.key, e.target.value)} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "cs" && (
+          <div style={styles.panel}>
+            <div style={styles.csGrid}>
+              {CS_FACTORS.map((f) => (
+                <div key={f.key} style={styles.csCard}>
+                  <span style={styles.csLabel}>{f.short}</span>
+                  <span style={styles.csName}>{f.label}</span>
+                  <div style={styles.csButtons}>
+                    {["-1", "0", "1"].map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => update("cs", f.key, v)}
+                        style={{
+                          ...styles.csBtn,
+                          ...(state.cs[f.key] === v
+                            ? {
+                                background: v === "1" ? "var(--c-bull)" : v === "-1" ? "var(--c-bear)" : "var(--c-muted)",
+                                color: "#000",
+                              }
+                            : {}),
+                        }}
+                      >
+                        {v === "1" ? "▲" : v === "-1" ? "▼" : "—"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ ...styles.grid3, marginTop: 16 }}>
+              <div style={styles.fieldGroup}>
+                <label style={styles.fieldLabel}>합산 스코어</label>
+                <input style={styles.input} type="number" value={state.csTotal} onChange={(e) => updateTop("csTotal", e.target.value)} placeholder="-7 ~ 7" />
+              </div>
+              <div style={styles.fieldGroup}>
+                <label style={styles.fieldLabel}>TTM Squeeze</label>
+                <select style={styles.select} value={state.csSqueeze} onChange={(e) => updateTop("csSqueeze", e.target.value)}>
+                  {["OFF", "ON", "RELEASE"].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </div>
+              <div style={styles.fieldGroup}>
+                <label style={styles.fieldLabel}>자동 합산</label>
+                <button
+                  style={styles.calcBtn}
+                  onClick={() => {
+                    const sum = CS_FACTORS.reduce((a, f) => a + parseInt(state.cs[f.key] || 0, 10), 0);
+                    updateTop("csTotal", String(sum));
+                  }}
+                >
+                  Σ = {CS_FACTORS.reduce((a, f) => a + parseInt(state.cs[f.key] || 0, 10), 0)}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "ema" && (
+          <div style={styles.panel}>
+            <div style={styles.noticeBox}>주기 고정: 10 / 20 / 60 / 120 / 200 / 350</div>
+            <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 280 }}>
+                <h3 style={styles.sectionTitle}>EMA</h3>
+                <div style={styles.grid2}>
+                  {EMA_PERIODS.map((p) => (
+                    <div key={`e-${p}`} style={styles.fieldGroup}>
+                      <label style={styles.fieldLabel}>EMA {p}</label>
+                      <input style={styles.input} type="number" value={state.ema[`p${p}`]} readOnly />
+                    </div>
+                  ))}
+                  <div style={styles.fieldGroup}>
+                    <label style={styles.fieldLabel}>정렬</label>
+                    <input style={styles.input} value={state.emaAlign} readOnly />
+                  </div>
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 280 }}>
+                <h3 style={styles.sectionTitle}>RVWAP</h3>
+                <div style={styles.grid2}>
+                  {EMA_PERIODS.map((p) => (
+                    <div key={`v-${p}`} style={styles.fieldGroup}>
+                      <label style={styles.fieldLabel}>RVWAP {p}</label>
+                      <input style={styles.input} type="number" value={state.rvwap[`p${p}`]} readOnly />
+                    </div>
+                  ))}
+                  <div style={styles.fieldGroup}>
+                    <label style={styles.fieldLabel}>정렬</label>
+                    <input style={styles.input} value={state.rvwapAlign} readOnly />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={styles.notesSection}>
+        <label style={styles.fieldLabel}>추가 메모</label>
+        <textarea
+          style={styles.textarea}
+          value={state.notes}
+          onChange={(e) => updateTop("notes", e.target.value)}
+          placeholder="차트 관찰, 뉴스, 심리, 이벤트 일정 등"
+          rows={3}
+        />
+      </div>
+
+      <div style={styles.actionRow}>
+        <button style={styles.analyzeBtn} onClick={runAI} disabled={aiLoading}>
+          {aiLoading ? "분석 중..." : "⚡ AI 종합 분석"}
+        </button>
+        <button style={styles.resetBtn} onClick={reset}>초기화</button>
+      </div>
+
+      {(aiResult || aiLoading) && (
+        <div ref={resultRef} style={styles.resultBox}>
+          <div style={styles.resultHeader}>
+            <span style={styles.resultTitle}>AI INTERPRETATION</span>
+            <span style={styles.resultDisclaimer}>투자 조언 아님 — 참고용 분석</span>
+          </div>
+          {aiLoading ? (
+            <div style={styles.loadingBox}>4개 지표 교차 분석 중...</div>
+          ) : (
+            <div style={styles.resultContent}>
+              {aiResult.split("\n").map((line, i) => {
+                if (line.startsWith("**[") && line.includes("]**")) {
+                  const header = line.match(/\*\*\[(.+?)\]\*\*/)?.[1] || "";
+                  const rest = line.replace(/\*\*\[.+?\]\*\*\s*/, "");
+                  return (
+                    <div key={i} style={styles.resultSection}>
+                      <span style={styles.resultSectionTag}>{header}</span>
+                      <span>{rest}</span>
+                    </div>
+                  );
+                }
+                if (!line.trim()) return <div key={i} style={{ height: 8 }} />;
+                return <p key={i} style={styles.resultPara}>{line.replace(/\*\*/g, "")}</p>;
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      <FactorMatrix state={state} />
+    </div>
+  );
+}
+
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload || {};
+  return (
+    <div style={styles.tooltipBox}>
+      <div style={styles.tooltipTitle}>{label}</div>
+      <div>Open {formatNum(row.open, 4)}</div>
+      <div>High {formatNum(row.high, 4)}</div>
+      <div>Low {formatNum(row.low, 4)}</div>
+      <div>Close {formatNum(row.close, 4)}</div>
+      <div>Vol {formatNum(row.volume, 0)}</div>
+    </div>
+  );
+}
+
+function StatusChip({ label, value, color }) {
+  return (
+    <div style={styles.chip}>
+      <span style={styles.chipLabel}>{label}</span>
+      <span style={{ ...styles.chipValue, color }}>{value}</span>
+    </div>
+  );
+}
+
+function SigmaGauge({ sigma }) {
+  const s = clamp(sigma, -3.5, 3.5);
+  const pct = ((s + 3.5) / 7) * 100;
+  const zones = [
+    { label: "공황", start: 0, end: (100 / 7) * 0.882, color: "#b71c1c" },
+    { label: "과매도", start: (100 / 7) * 0.882, end: (100 / 7) * 1.882, color: "#e65100" },
+    { label: "하락", start: (100 / 7) * 1.882, end: (100 / 7) * 2.882, color: "#f57f17" },
+    { label: "중립", start: (100 / 7) * 2.882, end: (100 / 7) * 4.118, color: "#00695c" },
+    { label: "상승", start: (100 / 7) * 4.118, end: (100 / 7) * 5.118, color: "#1b5e20" },
+    { label: "과매수", start: (100 / 7) * 5.118, end: (100 / 7) * 6.118, color: "#e65100" },
+    { label: "FOMO", start: (100 / 7) * 6.118, end: 100, color: "#b71c1c" },
+  ];
+
+  return (
+    <div style={styles.gaugeContainer}>
+      <div style={styles.gaugeTrack}>
+        {zones.map((z) => (
+          <div
+            key={z.label}
+            style={{
+              position: "absolute",
+              left: `${z.start}%`,
+              width: `${z.end - z.start}%`,
+              height: "100%",
+              background: z.color,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <span style={{ fontSize: 9, color: "#fff", opacity: 0.7 }}>{z.label}</span>
+          </div>
+        ))}
+        <div style={{ ...styles.gaugeNeedle, left: `${pct}%` }} />
+      </div>
+      <div style={styles.gaugeLabels}>
+        <span>-2.618</span><span>-1.618</span><span>-0.618</span><span style={{ color: "#fff" }}>0</span><span>0.618</span><span>1.618</span><span>2.618</span>
+      </div>
+    </div>
+  );
+}
+
+function FactorMatrix({ state }) {
+  const { fr, cs, emaAlign, rvwapAlign, csSqueeze } = state;
+  const sigmaText = Number.isFinite(num(fr.sigma, NaN)) ? num(fr.sigma).toFixed(2) : "0.00";
+
+  const domains = [
+    {
+      domain: "추세 방향",
+      factors: [
+        { src: "FR", name: "HMA 정렬", val: fr.hma, bull: fr.hma === "정렬UP", bear: fr.hma === "정렬DN" },
+        { src: "CS", name: "RVWAP Trend", val: cs.rvwapTrend, bull: cs.rvwapTrend === "1", bear: cs.rvwapTrend === "-1" },
+        { src: "EMA", name: "EMA 정렬", val: emaAlign, bull: emaAlign === "정배열", bear: emaAlign === "역배열" },
+        { src: "EMA", name: "RVWAP 정렬", val: rvwapAlign, bull: rvwapAlign === "정배열", bear: rvwapAlign === "역배열" },
+      ],
+    },
+    {
+      domain: "자금 흐름",
+      factors: [
+        { src: "FR", name: "CMF", val: fr.cmf, bull: num(fr.cmf) > 0.05, bear: num(fr.cmf) < -0.05 },
+        { src: "CS", name: "MFI", val: cs.mfi, bull: cs.mfi === "1", bear: cs.mfi === "-1" },
+        { src: "CS", name: "OBV Struct", val: cs.obvStruct, bull: cs.obvStruct === "1", bear: cs.obvStruct === "-1" },
+      ],
+    },
+    {
+      domain: "모멘텀",
+      factors: [
+        { src: "FR", name: "LR Slope", val: fr.lrDir, bull: fr.lrDir === "UP", bear: fr.lrDir === "DN" },
+        { src: "CS", name: "VW-RSI", val: cs.vwRsi, bull: cs.vwRsi === "1", bear: cs.vwRsi === "-1" },
+        { src: "CS", name: "VW-MACD", val: cs.vwMacd, bull: cs.vwMacd === "1", bear: cs.vwMacd === "-1" },
+      ],
+    },
+    {
+      domain: "변동성",
+      factors: [
+        { src: "FR", name: "ADX", val: fr.adx, bull: num(fr.adx) >= 20, bear: num(fr.adx) < 20 },
+        { src: "FR", name: "CHOP", val: fr.chop, bull: num(fr.chop) < 61.8, bear: num(fr.chop) >= 61.8 },
+        { src: "CS", name: "TTM Squeeze", val: csSqueeze, bull: csSqueeze === "RELEASE", bear: csSqueeze === "ON" },
+      ],
+    },
+    {
+      domain: "레짐/위치",
+      factors: [
+        { src: "FR", name: "Regime", val: fr.regime, bull: fr.regime === "BULL", bear: fr.regime === "BEAR" },
+        { src: "CS", name: "RVWAP Regime", val: cs.rvwapRegime, bull: cs.rvwapRegime === "1", bear: cs.rvwapRegime === "-1" },
+        { src: "FR", name: "Sigma 위치", val: `${sigmaText}σ`, bull: num(fr.sigma) > 0 && num(fr.sigma) < 1.618, bear: num(fr.sigma) < 0 && num(fr.sigma) > -1.618 },
+      ],
+    },
+  ];
+
+  return (
+    <div style={styles.matrixContainer}>
+      <h3 style={styles.matrixTitle}>FACTOR CONFLUENCE MATRIX</h3>
+      <div style={styles.matrixGrid}>
+        {domains.map((d) => (
+          <div key={d.domain} style={styles.matrixDomain}>
+            <div style={styles.matrixDomainHeader}>{d.domain}</div>
+            {d.factors.map((f, i) => (
+              <div key={`${d.domain}-${i}`} style={styles.matrixRow}>
+                <span style={styles.matrixSrc}>{f.src}</span>
+                <span style={styles.matrixName}>{f.name}</span>
+                <span style={{ ...styles.matrixDot, background: f.bull ? "var(--c-bull)" : f.bear ? "var(--c-bear)" : "var(--c-muted)" }} />
+                <span style={{ ...styles.matrixVal, color: f.bull ? "var(--c-bull)" : f.bear ? "var(--c-bear)" : "var(--c-muted)" }}>{f.val || "—"}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  root: {
+    "--c-bg": "#0a0e17",
+    "--c-surface": "#111827",
+    "--c-surface2": "#1a2236",
+    "--c-border": "#1e293b",
+    "--c-text": "#e2e8f0",
+    "--c-text2": "#94a3b8",
+    "--c-bull": "#00e676",
+    "--c-bear": "#ff1744",
+    "--c-muted": "#475569",
+    "--c-accent": "#00e5ff",
+    fontFamily: "'JetBrains Mono', 'SF Mono', 'Fira Code', monospace",
+    background: "var(--c-bg)",
+    color: "var(--c-text)",
+    minHeight: "100vh",
+    padding: 16,
+    fontSize: 13,
+    lineHeight: 1.5,
+  },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    borderBottom: "1px solid var(--c-border)",
+    paddingBottom: 12,
+    marginBottom: 16,
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  headerLeft: { display: "flex", flexDirection: "column", gap: 2 },
+  title: { fontSize: 18, fontWeight: 700, letterSpacing: 2, margin: 0, color: "var(--c-accent)" },
+  subtitle: { fontSize: 11, color: "var(--c-text2)", letterSpacing: 0.5 },
+  headerRight: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" },
+  tickerInput: {
+    background: "var(--c-surface)", border: "1px solid var(--c-border)", color: "var(--c-accent)",
+    padding: "8px 10px", borderRadius: 4, fontSize: 14, fontWeight: 700, width: 128, textTransform: "uppercase",
+  },
+  tfSelect: {
+    background: "var(--c-surface)", border: "1px solid var(--c-border)", color: "var(--c-text)",
+    padding: "8px 8px", borderRadius: 4, fontSize: 12,
+  },
+  syncBtn: {
+    background: "var(--c-surface2)", border: "1px solid var(--c-accent)", color: "var(--c-accent)",
+    padding: "8px 12px", borderRadius: 4, fontSize: 12, cursor: "pointer",
+  },
+  statusBar: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 },
+  chip: {
+    background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 6,
+    padding: "6px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, minWidth: 92,
+  },
+  chipLabel: { fontSize: 9, color: "var(--c-text2)", letterSpacing: 1, textTransform: "uppercase" },
+  chipValue: { fontSize: 13, fontWeight: 700 },
+  gaugeContainer: { marginBottom: 16 },
+  gaugeTrack: { position: "relative", height: 22, borderRadius: 4, overflow: "hidden", border: "1px solid var(--c-border)" },
+  gaugeNeedle: {
+    position: "absolute", top: -2, width: 3, height: 26, background: "#fff", borderRadius: 2,
+    transform: "translateX(-50%)", zIndex: 10, boxShadow: "0 0 8px rgba(255,255,255,0.8)",
+  },
+  gaugeLabels: { display: "flex", justifyContent: "space-between", fontSize: 9, color: "var(--c-text2)", padding: "2px 4px", marginTop: 2 },
+  chartCard: {
+    background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 8, padding: 14, marginBottom: 16,
+  },
+  chartHeader: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 },
+  chartTitle: { color: "var(--c-accent)", fontWeight: 700, fontSize: 12, letterSpacing: 1 },
+  chartSub: { color: "var(--c-text2)", fontSize: 11 },
+  chartMeta: { display: "flex", gap: 12, flexWrap: "wrap", color: "var(--c-text2)", fontSize: 11 },
+  overlayLegendGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8, marginTop: 10 },
+  overlayRow: { background: "var(--c-surface2)", border: "1px solid var(--c-border)", borderRadius: 6, padding: 8, display: "grid", gridTemplateColumns: "10px 40px 1fr 1fr", gap: 8, alignItems: "center" },
+  lineSwatch: { width: 10, height: 10, borderRadius: 999 },
+  overlayPeriod: { fontWeight: 700, color: "var(--c-accent)" },
+  overlayText: { fontSize: 11, color: "var(--c-text)" },
+  overlayTextMuted: { fontSize: 11, color: "var(--c-text2)" },
+  errorBox: { marginTop: 10, color: "#fecaca", background: "rgba(127,29,29,.35)", border: "1px solid #7f1d1d", padding: 10, borderRadius: 6 },
+  tooltipBox: { background: "#0f172a", border: "1px solid #334155", borderRadius: 6, padding: 10, color: "#e2e8f0", fontSize: 11 },
+  tooltipTitle: { color: "#67e8f9", marginBottom: 6, fontWeight: 700 },
+  tabRow: { display: "flex", gap: 4, marginBottom: 12, flexWrap: "wrap" },
+  tab: {
+    background: "var(--c-surface)", border: "1px solid var(--c-border)", color: "var(--c-text2)",
+    padding: "8px 16px", borderRadius: "6px 6px 0 0", cursor: "pointer", fontSize: 12,
+  },
+  tabActive: { background: "var(--c-surface2)", color: "var(--c-accent)", borderBottomColor: "transparent" },
+  panelContainer: { marginBottom: 16 },
+  panel: { background: "var(--c-surface2)", border: "1px solid var(--c-border)", borderRadius: "0 6px 6px 6px", padding: 16 },
+  noticeBox: { marginBottom: 12, padding: 10, borderRadius: 6, border: "1px solid #164e63", background: "rgba(8,47,73,.45)", color: "#bae6fd", fontSize: 11 },
+  grid3: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 },
+  grid2: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10 },
+  fieldGroup: { display: "flex", flexDirection: "column", gap: 3 },
+  fieldLabel: { fontSize: 10, color: "var(--c-text2)", letterSpacing: 0.5, textTransform: "uppercase" },
+  input: { background: "var(--c-surface)", border: "1px solid var(--c-border)", color: "var(--c-text)", padding: "6px 8px", borderRadius: 4, fontSize: 12, width: "100%" },
+  select: { background: "var(--c-surface)", border: "1px solid var(--c-border)", color: "var(--c-text)", padding: "6px 8px", borderRadius: 4, fontSize: 12, width: "100%" },
+  sectionTitle: { fontSize: 12, color: "var(--c-accent)", marginBottom: 8, marginTop: 0, fontWeight: 600 },
+  csGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 },
+  csCard: { background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 6, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 4, alignItems: "center" },
+  csLabel: { fontSize: 14, fontWeight: 700, color: "var(--c-accent)" },
+  csName: { fontSize: 9, color: "var(--c-text2)" },
+  csButtons: { display: "flex", gap: 4 },
+  csBtn: { background: "var(--c-surface2)", border: "1px solid var(--c-border)", color: "var(--c-text2)", width: 32, height: 28, borderRadius: 4, cursor: "pointer", fontSize: 14 },
+  calcBtn: { background: "var(--c-surface)", border: "1px solid var(--c-accent)", color: "var(--c-accent)", padding: "6px 12px", borderRadius: 4, cursor: "pointer", fontSize: 12, width: "100%" },
+  notesSection: { marginBottom: 12 },
+  textarea: { background: "var(--c-surface)", border: "1px solid var(--c-border)", color: "var(--c-text)", padding: 8, borderRadius: 4, fontSize: 12, width: "100%", resize: "vertical" },
+  actionRow: { display: "flex", gap: 8, marginBottom: 16 },
+  analyzeBtn: { background: "linear-gradient(135deg, #00695c, #004d40)", border: "1px solid var(--c-accent)", color: "#fff", padding: "12px 32px", borderRadius: 6, cursor: "pointer", fontSize: 14, fontWeight: 700, flex: 1 },
+  resetBtn: { background: "var(--c-surface)", border: "1px solid var(--c-border)", color: "var(--c-text2)", padding: "12px 20px", borderRadius: 6, cursor: "pointer", fontSize: 12 },
+  resultBox: { background: "var(--c-surface)", border: "1px solid var(--c-accent)", borderRadius: 6, padding: 0, marginBottom: 16, overflow: "hidden" },
+  resultHeader: { background: "var(--c-surface2)", padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--c-border)" },
+  resultTitle: { fontSize: 12, fontWeight: 700, color: "var(--c-accent)", letterSpacing: 1 },
+  resultDisclaimer: { fontSize: 9, color: "var(--c-text2)", fontStyle: "italic" },
+  resultContent: { padding: 16 },
+  resultSection: { marginBottom: 10, lineHeight: 1.6 },
+  resultSectionTag: { display: "inline-block", background: "var(--c-surface2)", border: "1px solid var(--c-border)", padding: "2px 8px", borderRadius: 3, fontSize: 10, fontWeight: 700, color: "var(--c-accent)", marginRight: 8, marginBottom: 4 },
+  resultPara: { margin: "4px 0", lineHeight: 1.6, color: "var(--c-text)" },
+  loadingBox: { padding: 24, display: "flex", alignItems: "center", gap: 12, justifyContent: "center", color: "var(--c-text2)" },
+  matrixContainer: { background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 6, padding: 16, marginBottom: 16 },
+  matrixTitle: { fontSize: 12, fontWeight: 700, color: "var(--c-text2)", letterSpacing: 1, marginTop: 0, marginBottom: 12, textTransform: "uppercase" },
+  matrixGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 12 },
+  matrixDomain: { background: "var(--c-surface2)", border: "1px solid var(--c-border)", borderRadius: 4, padding: 10 },
+  matrixDomainHeader: { fontSize: 10, fontWeight: 700, color: "var(--c-accent)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, paddingBottom: 4, borderBottom: "1px solid var(--c-border)" },
+  matrixRow: { display: "flex", alignItems: "center", gap: 6, padding: "3px 0" },
+  matrixSrc: { fontSize: 8, color: "var(--c-text2)", background: "var(--c-surface)", padding: "1px 4px", borderRadius: 2, minWidth: 24, textAlign: "center" },
+  matrixName: { fontSize: 11, color: "var(--c-text)", flex: 1 },
+  matrixDot: { width: 8, height: 8, borderRadius: "50%" },
+  matrixVal: { fontSize: 11, fontWeight: 600, minWidth: 50, textAlign: "right" },
+};
+
+export default App;
