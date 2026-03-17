@@ -71,7 +71,28 @@ body{background:var(--bg-0);color:var(--text);font-family:'JetBrains Mono',monos
 @media(min-width:768px){.panels-2col{flex-direction:row;}.panels-2col>.panel{flex:1;min-width:0;}}
 @media(max-width:360px){.cs-grid{grid-template-columns:repeat(3,1fr);}.c2-row{grid-template-columns:68px 1fr 36px;}}
 .footer{text-align:center;font-size:7px;color:var(--border-2);padding:16px 8px 24px;}
+
+/* Exchange Data Panel */
+.ex-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:10px;}
+@media(min-width:500px){.ex-grid{grid-template-columns:repeat(4,1fr);}}
+.ex-cell{background:var(–bg-3);border:1px solid var(–border-1);border-radius:4px;padding:10px 8px;text-align:center;}
+.ex-lbl{font-size:8px;color:var(–gold-dim);letter-spacing:0.08em;margin-bottom:4px;}
+.ex-val{font-size:16px;font-weight:700;font-family:‘JetBrains Mono’,monospace;line-height:1.2;}
+.ex-sub{font-size:8px;color:var(–text-dim);margin-top:3px;}
+.ex-bar-wrap{margin:10px 0;}.ex-bar-label{font-size:9px;color:var(–text-dim);margin-bottom:4px;display:flex;justify-content:space-between;}
+.ex-bar{height:10px;background:var(–bg-1);border-radius:5px;overflow:hidden;display:flex;}
+.ex-bar-long{background:var(–green);height:100%;transition:width 0.3s;}
+.ex-bar-short{background:var(–red);height:100%;transition:width 0.3s;}
+.ex-interp{margin-top:10px;padding:10px 12px;background:rgba(200,168,78,0.04);border-left:2px solid var(–gold-dim);border-radius:0 3px 3px 0;font-size:10px;line-height:1.6;}
+.ex-interp-title{font-size:8px;letter-spacing:0.12em;color:var(–gold);font-weight:600;margin-bottom:4px;}
+.ex-interp-bias{font-weight:700;padding:1px 5px;border-radius:2px;font-size:10px;display:inline-block;margin-bottom:3px;}
+.ex-interp-body{color:var(–text-dim);font-size:10px;line-height:1.6;}
+.cvd-row{display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px;background:var(–bg-3);border-radius:4px;}
+.cvd-bar{flex:1;height:8px;background:var(–bg-1);border-radius:4px;overflow:hidden;position:relative;}
+.cvd-fill{height:100%;border-radius:4px;transition:width 0.3s;}
+.cvd-label{font-size:9px;color:var(–text-dim);flex-shrink:0;width:70px;}
 </style>
+
 </head>
 <body>
 <div class="header"><div class="hdr-top">
@@ -122,6 +143,17 @@ body{background:var(--bg-0);color:var(--text);font-family:'JetBrains Mono',monos
       <div class="interp" id="interp-cs2"></div>
     </div>
   </div>
+
+  <!-- Exchange Data Panel -->
+
+  <div class="panel" id="p-exdata">
+    <div class="p-title"><span>거래소 데이터 ─ DERIVATIVES</span><span class="p-title-r" style="color:var(--text-dim);font-size:9px" id="ex-sym"></span></div>
+    <div class="ex-grid" id="ex-grid"></div>
+    <div id="ex-lsbar"></div>
+    <div id="ex-cvd"></div>
+    <div id="ex-interp"></div>
+  </div>
+
   <div class="footer">CONFLUENCE DECK v5 — LIVE BINANCE DATA</div>
 </div>
 <div class="tip-backdrop" id="tipBg"></div>
@@ -415,6 +447,233 @@ async function loadAndRender(){
 
   D=processData(oh);
   renderAll();
+  await fetchAndRenderExData();
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXCHANGE DATA: Funding, OI, Long/Short, CVD
+// ═══════════════════════════════════════════════════════════
+const FAPI="https://fapi.binance.com/fapi/v1";
+let exData={};
+
+async function fetchExchangeData(symbol){
+  const d={symbol:symbol,funding:null,oi:null,oiPrev:null,lsRatio:null,takerBuyVol:null,takerSellVol:null};
+  // 1. Funding Rate
+  try{
+    const r=await fetch(FAPI+"/premiumIndex?symbol="+symbol);
+    const j=await r.json();
+    d.funding=parseFloat(j.lastFundingRate)*100;
+    d.markPrice=parseFloat(j.markPrice);
+  }catch(e){console.error("Funding:",e);}
+  // 2. Open Interest
+  try{
+    const r=await fetch(FAPI+"/openInterest?symbol="+symbol);
+    const j=await r.json();
+    d.oi=parseFloat(j.openInterest);
+  }catch(e){console.error("OI:",e);}
+  // 3. OI history (for change %) - use 2 data points
+  try{
+    const r=await fetch("https://fapi.binance.com/futures/data/openInterestHist?symbol="+symbol+"&period=1h&limit=2");
+    const j=await r.json();
+    if(j.length>=2){d.oiPrev=parseFloat(j[0].sumOpenInterest);d.oiNow=parseFloat(j[1].sumOpenInterest);}
+  }catch(e){console.error("OI hist:",e);}
+  // 4. Top Trader Long/Short Ratio
+  try{
+    const r=await fetch("https://fapi.binance.com/futures/data/topLongShortPositionRatio?symbol="+symbol+"&period=1h&limit=1");
+    const j=await r.json();
+    if(j.length>0){d.longRatio=parseFloat(j[0].longAccount);d.shortRatio=parseFloat(j[0].shortAccount);d.lsRatio=parseFloat(j[0].longShortRatio);}
+  }catch(e){console.error("LS Ratio:",e);}
+  // 5. Taker Buy/Sell Volume (for CVD approximation)
+  try{
+    const r=await fetch("https://fapi.binance.com/futures/data/takerlongshortRatio?symbol="+symbol+"&period=1h&limit=24");
+    const j=await r.json();
+    if(j.length>0){
+      let totalBuy=0,totalSell=0;
+      j.forEach(x=>{totalBuy+=parseFloat(x.buyVol);totalSell+=parseFloat(x.sellVol);});
+      d.takerBuyVol=totalBuy;d.takerSellVol=totalSell;
+      d.cvd=totalBuy-totalSell;
+      // Recent 4h vs previous for momentum
+      if(j.length>=8){
+        let recentBuy=0,recentSell=0;
+        for(let i=j.length-4;i<j.length;i++){recentBuy+=parseFloat(j[i].buyVol);recentSell+=parseFloat(j[i].sellVol);}
+        d.recentCvd=recentBuy-recentSell;
+      }
+    }
+  }catch(e){console.error("Taker vol:",e);}
+  // 6. Global Long/Short Ratio (all traders)
+  try{
+    const r=await fetch("https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol="+symbol+"&period=1h&limit=1");
+    const j=await r.json();
+    if(j.length>0){d.globalLong=parseFloat(j[0].longAccount);d.globalShort=parseFloat(j[0].shortAccount);d.globalLSR=parseFloat(j[0].longShortRatio);}
+  }catch(e){console.error("Global LS:",e);}
+  exData[symbol]=d;
+  return d;
+}
+
+function interpExData(d){
+  if(!d||!d.funding===null)return{bias:"neutral",lines:["데이터 로드 중..."]};
+  let bias="neutral",lines=[];
+
+  // Funding interpretation
+  if(d.funding!==null){
+    if(d.funding<-0.01){
+      lines.push(`펀딩비율 ${d.funding.toFixed(4)}% — 네거티브. 숏 포지션 과밀. 숏스퀴즈 트리거 대기 중.`);
+      bias="long";
+    }else if(d.funding>0.03){
+      lines.push(`펀딩비율 ${d.funding.toFixed(4)}% — 양수 과열. 롱 포지션 과밀. 롱스퀴즈 리스크.`);
+      bias="short";
+    }else if(d.funding>0){
+      lines.push(`펀딩비율 ${d.funding.toFixed(4)}% — 소폭 양수. 롱 우위이나 과열 아님.`);
+    }else{
+      lines.push(`펀딩비율 ${d.funding.toFixed(4)}% — 소폭 음수. 숏 약간 우위.`);
+    }
+  }
+
+  // OI interpretation
+  if(d.oiPrev&&d.oiNow){
+    const oiChg=((d.oiNow-d.oiPrev)/d.oiPrev*100);
+    if(oiChg>3){
+      lines.push(`OI 1h +${oiChg.toFixed(1)}% 급증 — 새 포지션 대거 진입. 방향 결정 시 변동성 폭발 가능.`);
+    }else if(oiChg<-3){
+      lines.push(`OI 1h ${oiChg.toFixed(1)}% 감소 — 포지션 정리 중. 청산 또는 이익실현.`);
+    }else{
+      lines.push(`OI 변화 ${oiChg.toFixed(1)}% — 안정적. 큰 포지션 변동 없음.`);
+    }
+  }
+
+  // L/S Ratio interpretation
+  if(d.lsRatio!==null){
+    if(d.lsRatio>1.5){
+      lines.push(`탑 트레이더 L/S ${d.lsRatio.toFixed(2)} — 롱 강세. 기관/고래가 상승에 베팅 중.`);
+      if(bias==="neutral")bias="long";
+    }else if(d.lsRatio<0.7){
+      lines.push(`탑 트레이더 L/S ${d.lsRatio.toFixed(2)} — 숏 강세. 기관/고래가 하락에 베팅 중.`);
+      if(bias==="neutral")bias="short";
+    }else{
+      lines.push(`탑 트레이더 L/S ${d.lsRatio.toFixed(2)} — 균형. 명확한 방향성 없음.`);
+    }
+  }
+
+  // CVD interpretation
+  if(d.cvd!==undefined&&d.cvd!==null){
+    const cvdDir=d.cvd>0?"양수(매수 우위)":"음수(매도 우위)";
+    lines.push(`24h CVD ${cvdDir} — Taker 기준 ${d.cvd>0?"매수":"매도"} 거래량이 더 많았다.`);
+    if(d.recentCvd!==undefined){
+      const recent=d.recentCvd>0?"매수 가속":"매도 가속";
+      lines.push(`최근 4h CVD ${recent} — ${Math.abs(d.recentCvd).toFixed(0)} 차이.`);
+    }
+  }
+
+  // Combined signal
+  let bullCount=0,bearCount=0;
+  if(d.funding!==null&&d.funding<-0.005)bullCount++;
+  if(d.funding!==null&&d.funding>0.03)bearCount++;
+  if(d.lsRatio!==null&&d.lsRatio>1.3)bullCount++;
+  if(d.lsRatio!==null&&d.lsRatio<0.8)bearCount++;
+  if(d.cvd!==undefined&&d.cvd>0)bullCount++;
+  if(d.cvd!==undefined&&d.cvd<0)bearCount++;
+  if(d.oiPrev&&d.oiNow&&d.oiNow>d.oiPrev*1.02)bullCount++; // OI rising = conviction
+
+  if(bullCount>=3)bias="long";
+  else if(bearCount>=3)bias="short";
+  else if(bullCount>bearCount)bias="long";
+  else if(bearCount>bullCount)bias="short";
+
+  lines.push(`종합: 매수 시그널 ${bullCount}개 / 매도 시그널 ${bearCount}개.`);
+
+  return{bias,lines};
+}
+
+function renderExData(){
+  const sym=COINS[SC].sym;
+  const d=exData[sym];
+  document.getElementById("ex-sym").textContent=sym+" DERIVATIVES";
+  const grid=document.getElementById("ex-grid");
+  const lsbar=document.getElementById("ex-lsbar");
+  const cvdEl=document.getElementById("ex-cvd");
+  const interpEl=document.getElementById("ex-interp");
+
+  if(!d){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-dim);padding:20px">로딩 중...</div>';return;}
+
+  // Grid cells
+  const fundColor=d.funding!==null?(d.funding<0?"var(--red)":"var(--green)"):"var(--text-dim)";
+  const oiChg=(d.oiPrev&&d.oiNow)?((d.oiNow-d.oiPrev)/d.oiPrev*100):0;
+  const oiChgColor=oiChg>0?"var(--green)":"var(--red)";
+  const oiStr=d.oi?d.oi.toLocaleString("en",{maximumFractionDigits:0}):"N/A";
+
+  grid.innerHTML=`
+    <div class="ex-cell">
+      <div class="ex-lbl">FUNDING RATE</div>
+      <div class="ex-val" style="color:${fundColor}">${d.funding!==null?d.funding.toFixed(4)+"%":"N/A"}</div>
+      <div class="ex-sub">${d.funding!==null?(d.funding<0?"숏이 수수료 납부":"롱이 수수료 납부"):"—"}</div>
+    </div>
+    <div class="ex-cell">
+      <div class="ex-lbl">OPEN INTEREST</div>
+      <div class="ex-val">${oiStr}</div>
+      <div class="ex-sub" style="color:${oiChgColor}">${oiChg!==0?(oiChg>0?"+":"")+oiChg.toFixed(1)+"%":"—"} 1h</div>
+    </div>
+    <div class="ex-cell">
+      <div class="ex-lbl">TOP L/S RATIO</div>
+      <div class="ex-val" style="color:${d.lsRatio?(d.lsRatio>1?"var(--green)":"var(--red)"):"var(--text-dim)"}">${d.lsRatio?d.lsRatio.toFixed(2):"N/A"}</div>
+      <div class="ex-sub">${d.lsRatio?(d.lsRatio>1?"롱 우위":"숏 우위"):"—"}</div>
+    </div>
+    <div class="ex-cell">
+      <div class="ex-lbl">24h CVD</div>
+      <div class="ex-val" style="color:${d.cvd?(d.cvd>0?"var(--green)":"var(--red)"):"var(--text-dim)"}">${d.cvd?(d.cvd>0?"+":"")+d.cvd.toFixed(0):"N/A"}</div>
+      <div class="ex-sub">${d.cvd?(d.cvd>0?"Taker 매수 우위":"Taker 매도 우위"):"—"}</div>
+    </div>`;
+
+  // Long/Short bar
+  if(d.longRatio&&d.shortRatio){
+    const lPct=(d.longRatio*100).toFixed(1);
+    const sPct=(d.shortRatio*100).toFixed(1);
+    lsbar.innerHTML=`
+      <div class="ex-bar-wrap">
+        <div class="ex-bar-label"><span style="color:var(--green)">LONG ${lPct}%</span><span>Top Traders</span><span style="color:var(--red)">SHORT ${sPct}%</span></div>
+        <div class="ex-bar"><div class="ex-bar-long" style="width:${lPct}%"></div><div class="ex-bar-short" style="width:${sPct}%"></div></div>
+      </div>`;
+    // Global ratio bar
+    if(d.globalLong&&d.globalShort){
+      const glPct=(d.globalLong*100).toFixed(1);
+      const gsPct=(d.globalShort*100).toFixed(1);
+      lsbar.innerHTML+=`
+        <div class="ex-bar-wrap" style="margin-top:6px">
+          <div class="ex-bar-label"><span style="color:var(--green)">LONG ${glPct}%</span><span>All Traders</span><span style="color:var(--red)">SHORT ${gsPct}%</span></div>
+          <div class="ex-bar"><div class="ex-bar-long" style="width:${glPct}%"></div><div class="ex-bar-short" style="width:${gsPct}%"></div></div>
+        </div>`;
+    }
+  }else{lsbar.innerHTML="";}
+
+  // CVD bar
+  if(d.takerBuyVol&&d.takerSellVol){
+    const total=d.takerBuyVol+d.takerSellVol;
+    const buyPct=(d.takerBuyVol/total*100).toFixed(1);
+    const sellPct=(d.takerSellVol/total*100).toFixed(1);
+    cvdEl.innerHTML=`
+      <div class="cvd-row">
+        <span class="cvd-label" style="color:var(--green)">Buy ${buyPct}%</span>
+        <div class="cvd-bar"><div class="cvd-fill" style="width:${buyPct}%;background:var(--green);opacity:0.6"></div></div>
+        <span class="cvd-label" style="color:var(--red);text-align:right">Sell ${sellPct}%</span>
+      </div>
+      <div style="text-align:center;font-size:8px;color:var(--text-dim);margin-top:4px">24h Taker Buy vs Sell Volume</div>`;
+  }else{cvdEl.innerHTML="";}
+
+  // Interpretation
+  const interp=interpExData(d);
+  const biasLabel=interp.bias==="long"?"BULLISH":interp.bias==="short"?"BEARISH":"NEUTRAL";
+  const biasColor=interp.bias==="long"?"var(--green)":interp.bias==="short"?"var(--red)":"var(--text-dim)";
+  const biasBg=interp.bias==="long"?"rgba(123,200,108,0.1)":interp.bias==="short"?"rgba(232,115,74,0.1)":"rgba(138,128,96,0.1)";
+  interpEl.innerHTML=`
+    <div class="ex-interp">
+      <div class="ex-interp-title">파생상품 구조 해석</div>
+      <span class="ex-interp-bias" style="color:${biasColor};background:${biasBg}">${biasLabel}</span>
+      <div class="ex-interp-body">${interp.lines.join(" ")}</div>
+    </div>`;
+}
+
+async function fetchAndRenderExData(){
+  try{await fetchExchangeData(COINS[SC].sym);}catch(e){console.error("ExData:",e);}
+  renderExData();
 }
 
 async function init(){
@@ -427,7 +686,7 @@ async function init(){
   // Auto-refresh every 60s
   setInterval(async()=>{
     const key=`${COINS[SC].sym}_${ST}`;
-    delete cache[key]; // invalidate cache
+    delete cache[key];
     await fetchTickers();
     await loadAndRender();
   },60000);
