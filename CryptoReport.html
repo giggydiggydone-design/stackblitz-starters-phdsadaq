@@ -9,7 +9,7 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#0a0b0f; color:#e8e6e3; font-family:'IBM Plex Sans',sans-serif; padding-bottom:40px; }
-header { padding:14px 16px; border-bottom:1px solid #1e2028; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:rgba(10,11,15,0.95); z-index:10; gap:8px; }
+header { padding:14px 16px; border-bottom:1px solid #1e2028; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:rgba(10,11,15,0.97); z-index:10; gap:8px; }
 .logo { font-size:15px; font-weight:800; font-family:'JetBrains Mono',monospace; letter-spacing:-1px; white-space:nowrap; }
 .logo-dot { color:#00ffa3; }
 .ts { font-size:10px; color:#6b7080; background:#1e2028; padding:2px 8px; border-radius:10px; }
@@ -18,28 +18,35 @@ header { padding:14px 16px; border-bottom:1px solid #1e2028; display:flex; justi
 .tab { padding:6px 14px; border:none; cursor:pointer; font-size:12px; font-weight:600; background:transparent; color:#6b7080; font-family:'IBM Plex Sans',sans-serif; }
 .tab.on { background:#1e2028; color:#00ffa3; }
 .btn-refresh { padding:6px 12px; border:1px solid rgba(0,255,163,0.25); border-radius:8px; background:rgba(0,255,163,0.06); color:#00ffa3; font-size:11px; font-weight:600; cursor:pointer; font-family:'IBM Plex Sans',sans-serif; }
+.btn-refresh:disabled { background:#1e2028; cursor:wait; }
 #main { max-width:720px; margin:0 auto; padding:14px 16px; display:flex; flex-direction:column; gap:14px; }
 .card { background:#13141a; border:1px solid #1e2028; border-radius:10px; padding:14px 16px; }
 .card-hd { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
 .card-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; }
-.bdg { font-size:10px; color:#8a8f98; background:#1e2028; padding:2px 8px; border-radius:10px; }
+.bdg { font-size:10px; color:#8a8f98; background:#1e2028; padding:2px 8px; border-radius:10px; white-space:nowrap; }
 .tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; margin-right:4px; margin-bottom:2px; }
-.narrative { font-size:13px; color:#c9cdd4; line-height:1.6; margin-top:4px; }
+.narrative { font-size:13px; color:#c9cdd4; line-height:1.7; margin-top:6px; }
 .pgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); gap:8px; }
 .pcard { background:#13141a; border:1px solid #1e2028; border-radius:10px; padding:12px 14px; }
 .pcard-top { display:flex; justify-content:space-between; align-items:center; }
 .pcard-sym { font-size:14px; font-weight:700; }
 .pcard-price { font-size:20px; font-weight:800; font-family:'JetBrains Mono',monospace; margin:6px 0 2px; }
 .pcard-chg { font-size:13px; font-weight:600; font-family:'JetBrains Mono',monospace; }
+.pcard-hint { font-size:10px; color:#6b7080; margin-top:4px; line-height:1.4; }
 .two-col { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 .tbl-wrap { overflow-x:auto; }
 table { width:100%; border-collapse:collapse; font-size:12px; }
 th { padding:6px 8px; color:#6b7080; font-weight:600; border-bottom:1px solid #1e2028; font-size:10px; text-transform:uppercase; letter-spacing:.5px; text-align:left; white-space:nowrap; }
-th.r, td.r { text-align:right; font-family:'JetBrains Mono',monospace; }
-td { padding:7px 8px; color:#c9cdd4; font-size:12px; }
+th.r { text-align:right; }
+td { padding:7px 8px; color:#c9cdd4; font-size:12px; vertical-align:top; }
+td.r { text-align:right; font-family:'JetBrains Mono',monospace; }
+td.hint { font-size:10px; color:#6b7080; line-height:1.4; }
 tr { border-bottom:1px solid rgba(30,32,40,0.5); }
-.ibox { margin-top:10px; padding:10px 12px; background:#0d1117; border-left:3px solid #ffaa00; border-radius:0 6px 6px 0; font-size:12px; color:#c9cdd4; line-height:1.6; }
-.cbox { margin-top:8px; padding:8px 12px; background:#1a0a0a; border-left:3px solid #ff4466; border-radius:0 6px 6px 0; font-size:12px; color:#ff8899; line-height:1.6; }
+tr:last-child { border-bottom:none; }
+.ibox { margin-top:10px; padding:10px 12px; background:#0d1117; border-left:3px solid #ffaa00; border-radius:0 6px 6px 0; font-size:12px; color:#c9cdd4; line-height:1.7; }
+.ibox-title { color:#ffaa00; font-weight:700; margin-bottom:4px; font-size:11px; text-transform:uppercase; letter-spacing:1px; }
+.cbox { margin-top:8px; padding:8px 12px; background:#1a0a0a; border-left:3px solid #ff4466; border-radius:0 6px 6px 0; font-size:12px; color:#ff8899; line-height:1.7; }
+.cbox-title { color:#ff4466; font-weight:700; margin-bottom:2px; }
 .gauge-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; }
 .gauge-num { font-size:28px; font-weight:800; font-family:'JetBrains Mono',monospace; }
 .gauge-lbl { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; }
@@ -48,26 +55,32 @@ tr { border-bottom:1px solid rgba(30,32,40,0.5); }
 .alert-row:last-child { border-bottom:none; }
 .alert-ev { font-size:12px; color:#e8e6e3; font-weight:600; }
 .alert-rs { font-size:11px; color:#8a8f98; margin-top:2px; }
-.liq-blk { margin-bottom:10px; }
+.alert-why { font-size:11px; color:#ffaa00; margin-top:3px; }
+.liq-blk { margin-bottom:12px; }
 .liq-sym { font-size:13px; font-weight:700; margin-bottom:4px; }
-.liq-chips { display:flex; gap:6px; flex-wrap:wrap; }
+.liq-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:4px; }
 .chip-long { background:rgba(255,68,102,0.1); color:#ff4466; padding:2px 8px; border-radius:4px; font-size:11px; }
 .chip-short { background:rgba(0,255,163,0.1); color:#00ffa3; padding:2px 8px; border-radius:4px; font-size:11px; }
-.flow-row { padding:6px 0; border-bottom:1px solid #1e2028; }
+.liq-explain { font-size:11px; color:#6b7080; line-height:1.4; }
+.flow-row { padding:8px 0; border-bottom:1px solid #1e2028; }
 .flow-row:last-child { border-bottom:none; }
 .flow-top { display:flex; justify-content:space-between; align-items:center; }
 .flow-sym { font-weight:700; font-size:13px; }
 .flow-amt { font-size:12px; font-weight:600; font-family:'JetBrains Mono',monospace; }
-.flow-sub { font-size:10px; color:#8a8f98; margin-top:2px; }
+.flow-sub { font-size:11px; color:#8a8f98; margin-top:2px; }
+.flow-meaning { font-size:11px; color:#c9cdd4; margin-top:3px; line-height:1.4; }
 .struct-grid { display:flex; gap:6px; flex-wrap:wrap; }
 .struct-item { flex:1; min-width:80px; background:#0d1117; border-radius:6px; padding:8px 10px; text-align:center; }
 .struct-lbl { font-size:10px; color:#6b7080; margin-bottom:4px; }
 .struct-val { font-size:12px; font-weight:700; font-family:'JetBrains Mono',monospace; }
 .struct-chg { font-size:11px; font-weight:600; }
-.rem-row { padding:8px 0; border-bottom:1px solid #1e2028; display:flex; gap:8px; }
+.struct-hint { font-size:9px; color:#4a4f5a; margin-top:2px; line-height:1.3; }
+.rem-row { padding:10px 0; border-bottom:1px solid #1e2028; display:flex; gap:10px; }
 .rem-row:last-child { border-bottom:none; }
-.rem-num { color:#ffaa00; font-weight:800; font-size:16px; line-height:1.4; flex-shrink:0; }
-.rem-txt { font-size:12px; color:#c9cdd4; line-height:1.5; }
+.rem-num { color:#ffaa00; font-weight:800; font-size:18px; line-height:1.3; flex-shrink:0; }
+.rem-body { display:flex; flex-direction:column; gap:3px; }
+.rem-txt { font-size:13px; color:#e8e6e3; font-weight:600; line-height:1.5; }
+.rem-sub { font-size:11px; color:#8a8f98; line-height:1.5; }
 .scen-row { padding:10px 0; border-bottom:1px solid #1e2028; }
 .scen-row:last-child { border-bottom:none; }
 .scen-sym { font-size:14px; font-weight:700; margin-bottom:6px; }
@@ -76,8 +89,24 @@ tr { border-bottom:1px solid rgba(30,32,40,0.5); }
 .bear-box { flex:1; background:rgba(255,68,102,0.04); border:1px solid rgba(255,68,102,0.12); border-radius:6px; padding:6px 10px; font-size:11px; color:#ff4466; }
 .box-ttl { font-weight:700; margin-bottom:2px; }
 .key-lv { font-size:10px; color:#8a8f98; }
-.footer { text-align:center; margin-top:20px; font-size:10px; color:#4a4f5a; }
+.footer { text-align:center; margin-top:20px; font-size:10px; color:#4a4f5a; line-height:1.6; }
 .sig-inline { font-size:12px; font-weight:700; font-family:'JetBrains Mono',monospace; }
+.sig-detail-block { margin-top:10px; padding:10px 12px; background:#0d1117; border-radius:6px; }
+.sig-detail-row { display:flex; gap:8px; align-items:baseline; padding:4px 0; border-bottom:1px solid #1e202840; font-size:12px; }
+.sig-detail-row:last-child { border-bottom:none; }
+.sig-factor-lbl { color:#6b7080; font-size:10px; font-weight:600; flex-shrink:0; width:60px; }
+.sig-factor-val { color:#c9cdd4; line-height:1.5; }
+.event-row { padding:8px 0; border-bottom:1px solid #1e2028; }
+.event-row:last-child { border-bottom:none; }
+.event-date { font-size:11px; color:#6b7080; margin-bottom:3px; font-family:'JetBrains Mono',monospace; }
+.event-name { font-size:13px; font-weight:600; color:#e8e6e3; }
+.event-impact { font-size:11px; color:#c9cdd4; margin-top:3px; line-height:1.5; }
+.watchlist-row { padding:8px 0; border-bottom:1px solid #1e2028; display:flex; gap:8px; align-items:center; }
+.watchlist-row:last-child { border-bottom:none; }
+.wl-sym { font-weight:700; font-size:14px; width:44px; flex-shrink:0; }
+.wl-stars { font-size:13px; color:#ffaa00; flex-shrink:0; width:40px; }
+.wl-signal { font-size:12px; font-weight:700; font-family:'JetBrains Mono',monospace; flex-shrink:0; width:50px; }
+.wl-reason { font-size:11px; color:#8a8f98; flex:1; line-height:1.4; }
 </style>
 </head>
 <body>
@@ -99,56 +128,109 @@ tr { border-bottom:1px solid rgba(30,32,40,0.5); }
 <script>
 var DAILY = {
   date: "2026-03-16",
-  narrative: { tags: ["#숏스퀴즈", "#기관매집"], summary: "BTC 네거티브 펀딩 상태에서 스팟 ETF $767M 유입이 숏 청산을 촉발. ETH는 고래 매집 + ETF 유입이 동시에 겹치면서 알트 반등을 주도." },
+  narrative: {
+    tags: ["#숏스퀴즈", "#기관매집"],
+    summary: "BTC가 네거티브 펀딩(공매도 세력이 수수료를 내는 상태) 구간에서 스팟 ETF로 $767M이 유입되자 공매도 포지션이 강제 청산되며 급등이 발생했다. ETH는 고래(대형 투자자)의 직접 매집과 ETF 유입이 동시에 일어나며 알트코인 전반의 반등을 이끌었다.",
+    context: "쉽게 말하면: 하락에 베팅했던 사람들이 오늘 큰 손해를 봤고, 그 청산이 오히려 가격을 더 끌어올린 하루였다."
+  },
   prices: [
-    { symbol: "BTC", price: 73795, change: 3.2 },
-    { symbol: "ETH", price: 2264, change: 7.5 },
-    { symbol: "SOL", price: 93.66, change: 1.5 },
-    { symbol: "XAUT", price: 4971, change: 0.1 }
+    { symbol: "BTC", price: 73795, change: 3.2, hint: "비트코인. 암호화폐 시장의 기준점." },
+    { symbol: "ETH", price: 2264, change: 7.5, hint: "이더리움. 스마트 컨트랙트의 원조." },
+    { symbol: "SOL", price: 93.66, change: 1.5, hint: "솔라나. 빠르고 저렴한 이더리움 경쟁자." },
+    { symbol: "XAUT", price: 4971, change: 0.1, hint: "금 연동 코인. 1개 = 금 1트로이온스." }
   ],
-  metrics: { totalMcap: "2.52T", btcD: 56.9, fng: 15, fngLabel: "Extreme Fear", fngStreak: 38, funding: -0.010, oi: "687,200 BTC", oiChange: 5, totalOI: "$107.6B", totalOIChange: 5 },
+  metrics: {
+    totalMcap: "2.52T", mcapChange: 3.4,
+    btcD: 56.9,
+    fng: 15, fngLabel: "Extreme Fear", fngStreak: 38,
+    funding: -0.010, oi: "687,200 BTC", oiChange: 5,
+    totalOI: "$107.6B", totalOIChange: 5,
+    metricsHints: {
+      btcD: "BTC 도미넌스: 전체 암호화폐 시장에서 BTC가 차지하는 비율. 높으면 BTC 독주, 낮으면 알트코인 강세.",
+      fng: "공포탐욕지수: 0=극단적 공포(저점 근처 가능성), 100=극단적 탐욕(고점 근처 가능성).",
+      funding: "펀딩비율: 선물 시장에서 롱(매수)이 숏(매도)에게 주는 수수료. 음수면 숏이 더 많다는 뜻.",
+      oi: "미결제약정(OI): 현재 선물 시장에 열려있는 포지션 총량. 많을수록 변동성 폭발 가능성 높음."
+    }
+  },
   tradfi: [
-    { label: "S&P 500", price: "6,632", change: -0.61 },
-    { label: "QQQ", price: "593.72", change: -0.59 },
-    { label: "TSLA", price: "391.20", change: -0.96 },
-    { label: "KOSPI", price: "5,550", change: 1.14 },
-    { label: "Oil", price: "$104", change: 2.1 }
+    { label: "S&P 500", price: "6,632", change: -0.61, hint: "미국 대형주 500개 지수" },
+    { label: "QQQ", price: "593.72", change: -0.59, hint: "나스닥 기술주 ETF" },
+    { label: "TSLA", price: "391.20", change: -0.96, hint: "테슬라. BTC와 상관관계 높음" },
+    { label: "KOSPI", price: "5,550", change: 1.14, hint: "한국 주식시장 지수" },
+    { label: "Oil", price: "$104", change: 2.1, hint: "국제유가. 높으면 금리인하 기대 후퇴" }
   ],
-  signals: [
-    { symbol: "ETH", signal: "LONG", priority: 3, tags: "고래매집 + ETF유입 + OI신고 + 풋소멸", interpretation: "4개 요소 동시 정렬 = 기관 매집 패턴. $2,200 지지 시 $2,400-$2,500 테스트.", counter: "BTC $74K 돌파 실패 시 동반 하락. FOMC 매파 발언 리스크." },
-    { symbol: "BTC", signal: "LONG", priority: 2, tags: "숏스퀴즈 세팅 + ETF유입", interpretation: "$74,300 돌파 시 $80K 열림. 네거티브 펀딩 + 스팟 매수 = 스퀴즈 구조.", counter: "FOMC 매파 → 리스크오프. 유가 $100+ 지속 → 금리인하 기대 후퇴." }
+  tradfiInterpret: "미국 주식이 약세인데 BTC는 상승 — 이른바 '디커플링(탈동조화)' 현상이다. BTC-SPX 상관계수가 평소 0.78 수준인 점을 고려하면 이 분리가 오래 유지되기 어렵다. 유가 $104는 인플레이션 압력으로 작용해 연준의 금리인하 가능성을 낮추는 악재다.",
+  watchlist: [
+    { symbol: "ETH", stars: "★★★", signal: "LONG", reason: "고래매집 + ETF유입 + OI신고 + 풋소멸 — 4개 신호 동시 정렬. 기관 매집의 교과서적 패턴." },
+    { symbol: "BTC", stars: "★★", signal: "LONG", reason: "네거티브 펀딩 + 스팟 ETF 유입 = 숏스퀴즈 구조. $74,300 돌파 여부가 관건." },
+    { symbol: "SOL", stars: "★", signal: "중립", reason: "BTC/ETH 따라가는 수준. 독립적 모멘텀 없음." },
+    { symbol: "XAUT", stars: "☆", signal: "관망", reason: "유가 상승에도 보합. 금 시장 관망 국면." }
   ],
   alerts: [
-    { target: "BTC", event: "30분 내 $1,800 급등", reason: "숏 $113M 강제 청산" },
-    { target: "ETH", event: "24h +7.5% 급등", reason: "Voorhees $49M 매집 + ETF $161M" },
-    { target: "심리", event: "공포탐욕 15, 38일 연속", reason: "2022 루나 이후 최장 극단적 공포" },
-    { target: "매크로", event: "FOMC 내일 시작", reason: "금리 동결 예상, 파월 발언이 변수" }
+    { target: "BTC", event: "30분 내 $1,800 급등", reason: "숏 $113M 강제 청산", why: "공매도 포지션이 한꺼번에 청산되면서 시장이 매수 압력을 받아 가격이 폭등한 것. 이걸 '숏스퀴즈'라고 한다." },
+    { target: "ETH", event: "24h +7.5% 급등", reason: "Voorhees $49M 매집 + ETF $161M", why: "유명 투자자의 대량 매수와 기관 ETF 자금이 동시에 들어온 것. 수요가 공급을 압도하면 가격이 오른다." },
+    { target: "심리", event: "공포탐욕 15, 38일 연속", reason: "2022 루나 이후 최장 극단적 공포", why: "극단적 공포 구간은 역사적으로 중장기 매수 기회였다. 단, 언제 끝날지는 알 수 없다." },
+    { target: "매크로", event: "FOMC 내일 시작", reason: "금리 동결 예상, 파월 발언이 변수", why: "FOMC는 미국 금리를 결정하는 회의. 금리 동결은 호재, 금리 인상은 악재. 파월 의장의 말 한마디가 시장을 뒤흔들 수 있다." }
   ],
   liqMap: [
-    { symbol: "BTC", longLiq: "$71,200-$71,800", shortLiq: "$75,000-$76,500" },
-    { symbol: "ETH", longLiq: "$2,100-$2,150", shortLiq: "$2,350-$2,400" }
+    { symbol: "BTC", longLiq: "$71,200-$71,800", shortLiq: "$75,000-$76,500", longExplain: "이 구간까지 하락하면 매수 포지션이 강제청산 → 추가 하락 가속", shortExplain: "이 구간을 돌파하면 공매도 포지션이 강제청산 → 추가 상승 가속" },
+    { symbol: "ETH", longLiq: "$2,100-$2,150", shortLiq: "$2,350-$2,400", longExplain: "ETH 매수 포지션 청산 밀집 구간", shortExplain: "ETH 공매도 포지션 청산 밀집 구간" }
   ],
+  liqInterpret: "BTC 숏 청산 물량이 $75,000-$76,500에 집중되어 있다. 가격이 이 구간에 접근할수록 청산이 청산을 부르는 연쇄 가속 구조가 만들어진다. 반대로 $71,200 이탈 시엔 매수 청산이 쏟아지며 하락이 가팔라질 수 있다.",
   netflow: [
-    { symbol: "BTC", direction: "유출", amount: "-12,400 BTC", meaning: "홀딩 시그널" },
-    { symbol: "ETH", direction: "유출", amount: "-48,000 ETH", meaning: "콜드월렛 이동" }
+    { symbol: "BTC", direction: "유출", amount: "-12,400 BTC", meaning: "거래소 → 개인 지갑 이동", interpret: "매도하려면 거래소에 코인을 넣어야 한다. 거래소에서 코인이 빠져나간다는 건 팔 생각이 없다는 뜻 = 홀딩 신호." },
+    { symbol: "ETH", direction: "유출", amount: "-48,000 ETH", meaning: "콜드월렛(오프라인 지갑) 이동", interpret: "특히 콜드월렛으로 이동은 장기 보관 의사가 강한 신호. 매도 가능 물량이 시장에서 사라지는 것." }
+  ],
+  flowInterpret: "BTC와 ETH 모두 거래소 순유출 중이다. 팔 사람은 줄고 ETF를 통한 매수 수요는 늘고 있다 — 이 구조가 유지되면 가격은 올라갈 수밖에 없다.",
+  signals: [
+    {
+      symbol: "ETH", signal: "LONG", priority: 3,
+      factors: [
+        { label: "고래 매집", detail: "Voorhees 등 대형 투자자가 $49M 직접 매수. 고래가 사면 공급이 줄고 가격이 오른다." },
+        { label: "ETF 유입", detail: "기관 ETF로 $161M 유입. 기관이 들어오면 수요의 질이 다르다 — 장기 보유 경향." },
+        { label: "OI 신고", detail: "미결제약정이 사상 최고치. 새로운 매수 포지션이 대거 진입했다는 의미." },
+        { label: "풋 소멸", detail: "하락에 베팅한 옵션(풋)들이 만기 소멸. 헤지 수요가 사라지면 상승 저항이 줄어든다." }
+      ],
+      interpretation: "4개 신호가 동시에 정렬되는 건 흔치 않다. $2,200 지지가 유지되는 한 $2,400-$2,500 구간 테스트 가능성이 높다. 기관이 이 가격에 사고 있다는 게 핵심 전제다.",
+      counter: "틀리려면: BTC가 $74,000 돌파에 실패하고 하락 전환 시 ETH는 더 빠르게 빠진다. FOMC에서 파월이 예상보다 매파적 발언을 하면 전체 리스크 자산이 동반 하락한다."
+    },
+    {
+      symbol: "BTC", signal: "LONG", priority: 2,
+      factors: [
+        { label: "네거티브 펀딩", detail: "공매도 세력이 수수료를 내는 상태. 역설적으로 이 상태에서 스팟 매수가 들어오면 공매도가 급격히 청산된다." },
+        { label: "ETF 유입", detail: "$767M 스팟 ETF 유입. BlackRock 등 기관이 현물 BTC를 직접 매수하는 것." }
+      ],
+      interpretation: "$74,300 돌파 시 그 위에 쌓인 숏 청산 물량($75,000-$76,500)이 연쇄 청산되며 $80,000까지 열릴 수 있는 구조다.",
+      counter: "틀리려면: FOMC에서 매파적 신호 → 달러 강세 → BTC 하락. 유가 $100+ 지속으로 금리인하 기대가 무너지면 전체 위험자산이 같이 빠진다."
+    }
   ],
   structure: [
-    { label: "TOTAL", value: "2.491T", change: 1.58 },
-    { label: "TOTAL2", value: "1.015T", change: 1.91 },
-    { label: "TOTAL3", value: "741.4B", change: 1.15 },
-    { label: "USDT.D", value: "7.387%", change: -1.58 },
-    { label: "DEFI", value: "78.1B", change: 2.25 }
+    { label: "TOTAL", value: "2.491T", change: 1.58, hint: "전체 암호화폐 시총" },
+    { label: "TOTAL2", value: "1.015T", change: 1.91, hint: "BTC 제외 시총" },
+    { label: "TOTAL3", value: "741.4B", change: 1.15, hint: "BTC+ETH 제외 시총" },
+    { label: "USDT.D", value: "7.387%", change: -1.58, hint: "스테이블코인 도미넌스. 하락=현금이 코인으로 이동 중" },
+    { label: "DEFI", value: "78.1B", change: 2.25, hint: "탈중앙화 금융 섹터 시총" }
+  ],
+  structInterpret: "USDT.D(스테이블코인 비중) -1.58%가 가장 중요한 시그널이다. 관망하던 현금이 코인 시장으로 이동하고 있다는 뜻이다. TOTAL2가 TOTAL보다 상승폭이 크다 = 알트코인이 BTC보다 강하게 오르고 있다. ETH가 주도하는 알트 시즌의 초입일 수 있다.",
+  events: [
+    { date: "3/17-18", name: "FOMC (미국 연방공개시장위원회)", impact: "금리 동결 유력. 파월 의장의 발언 톤이 핵심 — '추가 인하 고려'라고 하면 급등, '아직 멀었다'라고 하면 급락 가능." },
+    { date: "3/19", name: "미국 주택착공 지표", impact: "경기 선행지표. 암호화폐 직접 영향은 작지만 전반적 리스크 선호도에 영향." },
+    { date: "3/21", name: "유럽 PMI 속보", impact: "유럽 경기 체감지수. 글로벌 경기 센티먼트 확인용." }
   ],
   remember: [
-    "ETH가 주인공. 고래 매집 + ETF 유입 + OI 증가 + 풋 소멸 동시 발생 = 기관 매집 패턴.",
-    "가격 ↑ vs 심리 ↓ 괴리. 공포탐욕 15인데 BTC는 40일 고점. 괴리 해소 시 큰 움직임.",
-    "내일 FOMC가 분기점. 금리 동결은 기정사실. 파월 발언 톤이 이번 주 방향 결정."
+    { title: "ETH가 오늘의 주인공", sub: "고래 매집 + ETF + OI 신고 + 풋 소멸이 동시 발생. 이 4개 신호가 겹치는 건 기관이 조직적으로 매집 중이라는 뜻이다. $2,200 지지가 핵심 레벨." },
+    { title: "가격↑ 심리↓ 괴리가 폭발 대기 중", sub: "BTC는 40일 고점인데 공포탐욕지수는 15(극단 공포). 이 괴리는 결국 해소된다 — 가격이 내려오거나, 심리가 따라 오르거나. 역사적으로 후자가 더 많았다." },
+    { title: "내일 FOMC가 이번 주의 분기점", sub: "금리 동결 자체는 이미 가격에 반영됨. 파월이 어떤 어조로 말하느냐가 다음 방향을 결정한다. 변동성 급등 가능성을 염두에 두자." }
   ]
 };
 
 var WEEKLY = {
   week: "2026-03-10 ~ 03-16",
-  narrative: { tags: ["#극단공포속반등", "#ETH기관매집", "#FOMC대기"], summary: "38일 연속 Extreme Fear에도 BTC는 $66K→$74K 레인지 상단을 테스트. ETH는 Voorhees 매집과 ETF 3주 연속 유입으로 주간 +12% 기록." },
+  narrative: {
+    tags: ["#극단공포속반등", "#ETH기관매집", "#FOMC대기"],
+    summary: "38일 연속 극단적 공포 속에서도 BTC는 $66K→$74K 레인지 상단을 테스트했다. ETH는 Voorhees 매집과 ETF 3주 연속 유입으로 주간 +12%를 기록했다.",
+    context: "공포가 극에 달한 구간에서 기관들이 조용히 사고 있었다는 게 이번 주의 핵심이다. 개인 투자자가 팔 때 기관이 줍는 패턴."
+  },
   performance: [
     { symbol: "BTC", open: 70100, close: 73795, high: 74300, low: 69200, weekPct: 5.3 },
     { symbol: "ETH", open: 2020, close: 2264, high: 2280, low: 1960, weekPct: 12.1 },
@@ -164,9 +246,10 @@ var WEEKLY = {
     { name: "L1", change: 7.2 }, { name: "DeFi", change: 5.8 }, { name: "L2", change: 3.1 },
     { name: "AI", change: 8.5 }, { name: "Meme", change: -2.3 }, { name: "Infra", change: 1.5 }
   ],
+  sectorInterpret: "AI 섹터가 +8.5%로 가장 강했다. Meme이 -2.3%로 유일하게 약세 — 투기성 자금이 빠지고 실용성 있는 섹터로 이동하는 신호다. L1(레이어1: 메인 블록체인)이 전반적으로 강했다는 건 기초 자산에 대한 수요가 높다는 뜻.",
   scenarios: [
-    { symbol: "BTC", bullish: "$74,300 돌파 → $80,000", bearish: "$70,500 이탈 → $66,000", keyLevel: "저항 $74,300 / 지지 $70,500" },
-    { symbol: "ETH", bullish: "$2,200 지지 → $2,500", bearish: "$2,100 이탈 → $1,960", keyLevel: "저항 $2,400 / 지지 $2,200" },
+    { symbol: "BTC", bullish: "$74,300 돌파 + 거래량 동반 → $80,000 열림", bearish: "$70,500 이탈 → $66,000 재테스트", keyLevel: "저항 $74,300 / 지지 $70,500" },
+    { symbol: "ETH", bullish: "$2,200 지지 유지 → $2,500 목표", bearish: "$2,100 이탈 → $1,960", keyLevel: "저항 $2,400 / 지지 $2,200" },
     { symbol: "SOL", bullish: "$95 돌파 → $105", bearish: "$88 이탈 → $82", keyLevel: "저항 $95 / 지지 $88" }
   ],
   macroCalendar: [
@@ -175,9 +258,9 @@ var WEEKLY = {
     { date: "3/21", event: "유럽 PMI", impact: "중", note: "글로벌 경기 센티먼트" }
   ],
   remember: [
-    "ETH 주간 +12% — 기관 매집 구조 확인. $2,200 지지 여부가 다음 주 핵심.",
-    "시그널 3/3 WIN — 극단적 공포 구간에서의 롱 시그널 적중률 100%.",
-    "FOMC + 유가가 다음 주 최대 변수. 파월 매파 발언 시 이번 주 상승분 반납 가능."
+    { title: "ETH 주간 +12% — 기관 매집 패턴 확인", sub: "$2,200 지지 유지 여부가 다음 주 핵심 레벨이다." },
+    { title: "공포 구간에서 롱 시그널 3/3 적중", sub: "극단적 공포 = 위험이 아니라 기회였다. 감정이 아닌 구조로 판단하는 게 중요하다." },
+    { title: "FOMC + 유가가 다음 주 최대 변수", sub: "파월 매파 발언 시 이번 주 상승분 전부 반납 가능. 포지션 크기 관리 필수." }
   ]
 };
 
@@ -209,24 +292,28 @@ function makeCard(title, content, accent, badge) {
   return '<div class="card"><div class="card-hd"><div class="card-title" style="color:' + ac + '">' + title + '</div>' + bdgHtml + '</div>' + content + '</div>';
 }
 
-function ibox(txt) {
-  return '<div class="ibox">💡 ' + txt + '</div>';
+function ibox(label, txt) {
+  return '<div class="ibox"><div class="ibox-title">💡 ' + label + '</div>' + txt + '</div>';
 }
 function cbox(txt) {
-  return '<div class="cbox"><strong>⚠ 반대 시나리오:</strong> ' + txt + '</div>';
+  return '<div class="cbox"><div class="cbox-title">⚠ 반대 시나리오 — 틀리려면?</div>' + txt + '</div>';
 }
 
 function makeTable(headers, rows) {
   var ths = "";
   for (var i = 0; i < headers.length; i++) {
-    ths += '<th' + (i > 0 ? ' class="r"' : '') + '>' + headers[i] + '</th>';
+    var cls = (i > 0 && headers[i] !== "이게 뭔데?") ? ' class="r"' : '';
+    ths += '<th' + cls + '>' + headers[i] + '</th>';
   }
   var trs = "";
   for (var r = 0; r < rows.length; r++) {
     var row = rows[r];
     var tds = "";
     for (var c = 0; c < row.length; c++) {
-      tds += '<td' + (c > 0 ? ' class="r"' : '') + '>' + row[c] + '</td>';
+      var isHint = (headers[c] === "이게 뭔데?");
+      var isRight = (c > 0 && !isHint);
+      var cls = isHint ? ' class="hint"' : (isRight ? ' class="r"' : '');
+      tds += '<td' + cls + '>' + row[c] + '</td>';
     }
     trs += '<tr>' + tds + '</tr>';
   }
@@ -296,6 +383,14 @@ function renderDaily(d) {
   var sigMap = {};
   for (var i = 0; i < d.signals.length; i++) { sigMap[d.signals[i].symbol] = d.signals[i]; }
 
+  // 1. 내러티브
+  var narrativeHtml = makeCard("오늘의 내러티브",
+    '<div style="margin-bottom:8px">' + makeTags(d.narrative.tags, "#ffaa00") + '</div>' +
+    '<div class="narrative">' + d.narrative.summary + '</div>' +
+    '<div style="margin-top:8px;padding:8px 12px;background:#0d1117;border-radius:6px;font-size:12px;color:#8a8f98;line-height:1.6">' + d.narrative.context + '</div>',
+    "#ffaa00");
+
+  // 2. 가격 카드
   var pcards = "";
   for (var i = 0; i < d.prices.length; i++) {
     var c = d.prices[i];
@@ -305,89 +400,157 @@ function renderDaily(d) {
       var sc = sig.signal === "LONG" ? "#00ffa3" : "#ff4466";
       var arrow = sig.signal === "LONG" ? "▲" : "▼";
       var starColor = sig.priority >= 3 ? "#ffaa00" : sig.priority >= 2 ? "#00ffa3" : "#8a8f98";
-      sigHtml = '<span class="sig-inline" style="color:' + sc + '">' + arrow + ' ' + sig.signal + ' <span style="color:' + starColor + '">' + (STARS[sig.priority] || "☆") + '</span></span>';
+      sigHtml = '<span class="sig-inline" style="color:' + sc + '">' + arrow + ' <span style="color:' + starColor + '">' + (STARS[sig.priority] || "☆") + '</span></span>';
     }
     pcards += '<div class="pcard"><div class="pcard-top"><span class="pcard-sym">' + c.symbol + '</span>' + sigHtml + '</div>' +
       '<div class="pcard-price">' + fp(c.price) + '</div>' +
-      '<div class="pcard-chg" style="color:' + pc(c.change) + '">' + fpc(c.change) + '</div></div>';
+      '<div class="pcard-chg" style="color:' + pc(c.change) + '">' + fpc(c.change) + '</div>' +
+      '<div class="pcard-hint">' + c.hint + '</div></div>';
   }
 
+  // 3. 지표 테이블
+  var h = d.metrics;
   var metRows = [
-    ["총 시총", d.metrics.totalMcap],
-    ["BTC.D", d.metrics.btcD + "%"],
-    ["BTC 펀딩", '<span style="color:' + (d.metrics.funding < 0 ? "#ff4466" : "#00ffa3") + '">' + d.metrics.funding + '%</span>'],
-    ["BTC OI", d.metrics.oi + ' <small style="color:#00ffa3">+' + d.metrics.oiChange + '%</small>'],
-    ["총 선물 OI", d.metrics.totalOI + ' <small style="color:#00ffa3">+' + d.metrics.totalOIChange + '%</small>']
+    ["총 시총", h.totalMcap, "전체 암호화폐 시장 규모. 2조 달러 이상이면 '주류 자산' 수준."],
+    ["BTC 도미넌스", h.btcD + "%", "BTC 비중↑=알트 약세, BTC 비중↓=알트 강세 경향."],
+    ["BTC 펀딩비율", '<span style="color:' + (h.funding < 0 ? "#ff4466" : "#00ffa3") + '">' + h.funding + '%</span>', h.funding < 0 ? "음수 = 공매도 세력이 수수료 납부 중. 숏스퀴즈 트리거 대기." : "양수 = 매수 세력이 수수료 납부 중. 과열 신호."],
+    ["BTC OI", h.oi + ' <small style="color:#00ffa3">+' + h.oiChange + '%</small>', "선물 미결제약정. 많을수록 청산 시 변동성 증폭."],
+    ["총 선물 OI", h.totalOI + ' <small style="color:#00ffa3">+' + h.totalOIChange + '%</small>', "전체 선물 시장 규모. 역대 최고 근접 = 리스크 누적."]
   ];
 
+  var gaugeContent = '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">' +
+    makeGauge(h.fng, h.fngLabel, h.fngStreak) +
+    '<div style="flex:1;min-width:160px;font-size:12px;color:#c9cdd4;line-height:1.7">공포탐욕지수 <strong style="color:' + gc(h.fng) + '">' + h.fng + '</strong> — 0에 가까울수록 시장이 패닉 상태. 역사적으로 15 이하는 중장기 매수 기회였다. 현재 <strong>' + h.fngStreak + '일 연속</strong> 극단 공포 — 2022년 루나 사태 이후 최장 기록.</div></div>' +
+    ibox("해석", "지수 15 = 역사적 매수 구간. 단, '언제' 반등할지는 모른다. 38일 연속 공포는 극단의 끝이 어디인지 아무도 모른다는 뜻이기도 하다.");
+  var metricsHtml =
+    makeCard("시장 지표", makeTable(["지표", "값", "이게 뭔데?"], metRows), "#e8e6e3", "Market") +
+    makeCard("공포 & 탐욕", gaugeContent, null, "Sentiment");
+
+  // 4. 외부 시장
   var tradfiRows = [];
   for (var i = 0; i < d.tradfi.length; i++) {
     var t = d.tradfi[i];
-    tradfiRows.push([t.label, t.price, '<span style="color:' + pc(t.change) + ';font-weight:600">' + fpc(t.change) + '</span>']);
+    tradfiRows.push([t.label, t.price, '<span style="color:' + pc(t.change) + ';font-weight:600">' + fpc(t.change) + '</span>', t.hint]);
   }
+  var tradfiHtml = makeCard("외부 시장 (TradFi)",
+    makeTable(["지표", "가격", "변동", "이게 뭔데?"], tradfiRows) +
+    ibox("해석", d.tradfiInterpret),
+    "#e8e6e3", "TradFi");
 
+  // 5. 와치리스트
+  var wlHtml = "";
+  for (var i = 0; i < d.watchlist.length; i++) {
+    var w = d.watchlist[i];
+    var sigColor = w.signal === "LONG" ? "#00ffa3" : w.signal === "중립" ? "#8a8f98" : "#6b7080";
+    wlHtml += '<div class="watchlist-row">' +
+      '<div class="wl-sym">' + w.symbol + '</div>' +
+      '<div class="wl-stars">' + w.stars + '</div>' +
+      '<div class="wl-signal" style="color:' + sigColor + '">' + w.signal + '</div>' +
+      '<div class="wl-reason">' + w.reason + '</div></div>';
+  }
+  var watchlistHtml = makeCard("와치리스트", wlHtml, "#e8e6e3", "Watchlist");
+
+  // 6. 이상 감지
   var alertsHtml = "";
   for (var i = 0; i < d.alerts.length; i++) {
     var a = d.alerts[i];
-    alertsHtml += '<div class="alert-row"><span class="tag" style="background:rgba(255,68,102,.1);color:#ff4466;border:1px solid rgba(255,68,102,.18);flex-shrink:0">' + a.target + '</span>' +
-      '<div><div class="alert-ev">' + a.event + '</div><div class="alert-rs">' + a.reason + '</div></div></div>';
+    alertsHtml += '<div class="alert-row">' +
+      '<span class="tag" style="background:rgba(255,68,102,.1);color:#ff4466;border:1px solid rgba(255,68,102,.18);flex-shrink:0">' + a.target + '</span>' +
+      '<div><div class="alert-ev">' + a.event + '</div>' +
+      '<div class="alert-rs">' + a.reason + '</div>' +
+      '<div class="alert-why">💬 ' + a.why + '</div></div></div>';
   }
+  var alertCard = makeCard("⚠ 이상 감지", alertsHtml, "#ff4466", "Alert");
 
+  // 7. 청산 지도
   var liqHtml = "";
   for (var i = 0; i < d.liqMap.length; i++) {
     var l = d.liqMap[i];
-    liqHtml += '<div class="liq-blk"><div class="liq-sym">' + l.symbol + '</div>' +
-      '<div class="liq-chips"><span class="chip-long">롱청산 ' + l.longLiq + '</span><span class="chip-short">숏청산 ' + l.shortLiq + '</span></div></div>';
+    liqHtml += '<div class="liq-blk">' +
+      '<div class="liq-sym">' + l.symbol + '</div>' +
+      '<div class="liq-chips">' +
+      '<span class="chip-long">📉 롱 청산 ' + l.longLiq + '</span>' +
+      '<span class="chip-short">📈 숏 청산 ' + l.shortLiq + '</span></div>' +
+      '<div class="liq-explain">하락 시 롱 청산 → ' + l.longExplain + '</div>' +
+      '<div class="liq-explain" style="margin-top:2px">돌파 시 숏 청산 → ' + l.shortExplain + '</div></div>';
   }
+  var liqCard = makeCard("청산 지도", liqHtml + ibox("해석", d.liqInterpret), "#ff6b35", "Liquidation");
 
+  // 8. 거래소 자금 흐름
   var flowHtml = "";
   for (var i = 0; i < d.netflow.length; i++) {
     var n = d.netflow[i];
     var fc = n.direction === "유출" ? "#00ffa3" : "#ff4466";
-    flowHtml += '<div class="flow-row"><div class="flow-top"><span class="flow-sym">' + n.symbol + '</span>' +
-      '<span class="flow-amt" style="color:' + fc + '">' + n.amount + '</span></div>' +
-      '<div class="flow-sub">' + n.direction + ' → ' + n.meaning + '</div></div>';
+    flowHtml += '<div class="flow-row">' +
+      '<div class="flow-top"><span class="flow-sym">' + n.symbol + '</span>' +
+      '<span class="flow-amt" style="color:' + fc + '">' + (n.direction === "유출" ? "↑ 유출 " : "↓ 유입 ") + n.amount + '</span></div>' +
+      '<div class="flow-sub">' + n.meaning + '</div>' +
+      '<div class="flow-meaning">' + n.interpret + '</div></div>';
+  }
+  var flowCard = makeCard("거래소 자금 흐름", flowHtml + ibox("해석", d.flowInterpret), "#4ecdc4", "On-chain");
+
+  // 9. 상세 분석
+  var signalsHtml = "";
+  for (var i = 0; i < d.signals.length; i++) {
+    var sig = d.signals[i];
+    var sc = sig.signal === "LONG" ? "#00ffa3" : "#ff4466";
+    var factorsHtml = '<div class="sig-detail-block">';
+    for (var j = 0; j < sig.factors.length; j++) {
+      factorsHtml += '<div class="sig-detail-row">' +
+        '<div class="sig-factor-lbl">' + sig.factors[j].label + '</div>' +
+        '<div class="sig-factor-val">' + sig.factors[j].detail + '</div></div>';
+    }
+    factorsHtml += '</div>';
+    signalsHtml += makeCard(sig.symbol + " 상세분석",
+      factorsHtml + ibox("종합 해석", sig.interpretation) + cbox(sig.counter),
+      sc, STARS[sig.priority] || "☆");
   }
 
+  // 10. 시장 구조
   var structHtml = '<div class="struct-grid">';
   for (var i = 0; i < d.structure.length; i++) {
     var s = d.structure[i];
     structHtml += '<div class="struct-item"><div class="struct-lbl">' + s.label + '</div>' +
       '<div class="struct-val">' + s.value + '</div>' +
-      '<div class="struct-chg" style="color:' + pc(s.change) + '">' + fpc(s.change) + '</div></div>';
+      '<div class="struct-chg" style="color:' + pc(s.change) + '">' + fpc(s.change) + '</div>' +
+      '<div class="struct-hint">' + s.hint + '</div></div>';
   }
   structHtml += '</div>';
+  var structCard = makeCard("시장 구조 모니터", structHtml + ibox("해석", d.structInterpret), "#6c5ce7", "상급자용");
 
-  var signalsHtml = "";
-  for (var i = 0; i < d.signals.length; i++) {
-    var sig = d.signals[i];
-    var sc = sig.signal === "LONG" ? "#00ffa3" : "#ff4466";
-    var tagParts = sig.tags.split(" + ");
-    var tagsHtml = "";
-    for (var j = 0; j < tagParts.length; j++) {
-      tagsHtml += '<span class="tag" style="background:#00ffa318;color:#00ffa3;border:1px solid #00ffa330">' + tagParts[j] + '</span>';
-    }
-    signalsHtml += makeCard(sig.symbol + " 상세분석",
-      '<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">' + tagsHtml + '</div>' + ibox(sig.interpretation) + cbox(sig.counter),
-      sc, STARS[sig.priority] || "☆");
+  // 11. 핵심 이벤트
+  var eventsHtml = "";
+  for (var i = 0; i < d.events.length; i++) {
+    var ev = d.events[i];
+    eventsHtml += '<div class="event-row"><div class="event-date">' + ev.date + '</div>' +
+      '<div class="event-name">' + ev.name + '</div>' +
+      '<div class="event-impact">' + ev.impact + '</div></div>';
   }
+  var eventsCard = makeCard("핵심 이벤트", eventsHtml, "#ff6b35", "캘린더");
 
+  // 12. 기억할 것 3가지
   var remHtml = "";
   for (var i = 0; i < d.remember.length; i++) {
-    remHtml += '<div class="rem-row"><span class="rem-num">' + (i + 1) + '</span><span class="rem-txt">' + d.remember[i] + '</span></div>';
+    var r = d.remember[i];
+    remHtml += '<div class="rem-row"><span class="rem-num">' + (i + 1) + '</span>' +
+      '<div class="rem-body"><div class="rem-txt">' + r.title + '</div><div class="rem-sub">' + r.sub + '</div></div></div>';
   }
+  var remCard = makeCard("오늘 기억할 것 3가지", remHtml, "#ffaa00");
 
   var parts = [];
-  parts.push(makeCard("오늘의 내러티브", '<div style="margin-bottom:6px">' + makeTags(d.narrative.tags, "#ffaa00") + '</div><div class="narrative">' + d.narrative.summary + '</div>', "#ffaa00"));
+  parts.push(narrativeHtml);
   parts.push('<div class="pgrid">' + pcards + '</div>');
-  parts.push('<div class="two-col">' + makeCard("시장 지표", makeTable(["지표", "값"], metRows), "#e8e6e3", "Market") + makeCard("공포 & 탐욕", makeGauge(d.metrics.fng, d.metrics.fngLabel, d.metrics.fngStreak) + ibox("가격은 40일 고점인데 심리는 극단적 공포. 괴리 해소 시 큰 움직임."), null, "Sentiment") + '</div>');
-  parts.push(makeCard("외부 시장", makeTable(["지표", "가격", "변동"], tradfiRows) + ibox("미국 주식 약세인데 BTC 상승 — 드문 디커플링."), "#e8e6e3", "TradFi"));
-  parts.push(makeCard("⚠ 이상 감지", alertsHtml, "#ff4466", "Alert"));
-  parts.push('<div class="two-col">' + makeCard("청산 지도", liqHtml + ibox("BTC 숏 청산 $75K 집중. 돌파 시 연쇄 가속."), "#ff6b35", "Liquidation") + makeCard("거래소 자금 흐름", flowHtml + ibox("BTC/ETH 순유출. 매도 물량 감소 + ETF 매수 = 상승 압력."), "#4ecdc4", "On-chain") + '</div>');
+  parts.push(metricsHtml);
+  parts.push(tradfiHtml);
+  parts.push(watchlistHtml);
+  parts.push(alertCard);
+  parts.push(liqCard);
+  parts.push(flowCard);
   parts.push(signalsHtml);
-  parts.push(makeCard("시장 구조", structHtml + ibox("USDT.D -1.58% 핵심. 현금→코인 자금 이동 중."), "#6c5ce7", "상급자용"));
-  parts.push(makeCard("오늘 기억할 것 3가지", remHtml, "#ffaa00"));
-  parts.push('<div class="footer">이 리포트는 투자 조언이 아닌 시장 구조 분석입니다.</div>');
+  parts.push(structCard);
+  parts.push(eventsCard);
+  parts.push(remCard);
+  parts.push('<div class="footer">이 리포트는 투자 조언이 아닌 시장 구조 분석입니다.<br>모든 투자 결정과 결과의 책임은 본인에게 있습니다.</div>');
   return parts.join("");
 }
 
@@ -395,10 +558,17 @@ function renderWeekly(d) {
   var wr = 0;
   for (var i = 0; i < d.signalReview.length; i++) { if (d.signalReview[i].result === "WIN") wr++; }
 
+  var narrativeHtml = makeCard("이번 주 내러티브",
+    '<div style="margin-bottom:8px">' + makeTags(d.narrative.tags, "#ffaa00") + '</div>' +
+    '<div class="narrative">' + d.narrative.summary + '</div>' +
+    '<div style="margin-top:8px;padding:8px 12px;background:#0d1117;border-radius:6px;font-size:12px;color:#8a8f98;line-height:1.6">' + d.narrative.context + '</div>',
+    "#ffaa00");
+
   var perfRows = [];
   for (var i = 0; i < d.performance.length; i++) {
     var p = d.performance[i];
-    perfRows.push(['<strong>' + p.symbol + '</strong>', fp(p.open), fp(p.close), fp(p.high), fp(p.low), '<span style="color:' + pc(p.weekPct) + ';font-weight:700">' + fpc(p.weekPct) + '</span>']);
+    perfRows.push(['<strong>' + p.symbol + '</strong>', fp(p.open), fp(p.close), fp(p.high), fp(p.low),
+      '<span style="color:' + pc(p.weekPct) + ';font-weight:700">' + fpc(p.weekPct) + '</span>']);
   }
 
   var sigRows = [];
@@ -425,26 +595,36 @@ function renderWeekly(d) {
   for (var i = 0; i < d.scenarios.length; i++) {
     var s = d.scenarios[i];
     scenHtml += '<div class="scen-row"><div class="scen-sym">' + s.symbol + '</div>' +
-      '<div class="scen-cols"><div class="bull-box"><div class="box-ttl">시나리오 A (상승)</div>' + s.bullish + '</div>' +
-      '<div class="bear-box"><div class="box-ttl">시나리오 B (하락)</div>' + s.bearish + '</div></div>' +
-      '<div class="key-lv">핵심 레벨: ' + s.keyLevel + '</div></div>';
+      '<div class="scen-cols"><div class="bull-box"><div class="box-ttl">📈 상승 시나리오</div>' + s.bullish + '</div>' +
+      '<div class="bear-box"><div class="box-ttl">📉 하락 시나리오</div>' + s.bearish + '</div></div>' +
+      '<div class="key-lv" style="margin-top:4px">핵심 레벨: ' + s.keyLevel + '</div></div>';
   }
 
   var remHtml = "";
   for (var i = 0; i < d.remember.length; i++) {
-    remHtml += '<div class="rem-row"><span class="rem-num">' + (i + 1) + '</span><span class="rem-txt">' + d.remember[i] + '</span></div>';
+    var r = d.remember[i];
+    remHtml += '<div class="rem-row"><span class="rem-num">' + (i + 1) + '</span>' +
+      '<div class="rem-body"><div class="rem-txt">' + r.title + '</div><div class="rem-sub">' + r.sub + '</div></div></div>';
   }
 
   var winColor = wr === d.signalReview.length ? "#00ffa3" : "#ffaa00";
   var parts = [];
-  parts.push(makeCard("이번 주 내러티브", '<div style="margin-bottom:6px">' + makeTags(d.narrative.tags, "#ffaa00") + '</div><div class="narrative">' + d.narrative.summary + '</div>', "#ffaa00"));
-  parts.push(makeCard("주간 성과표", makeTable(["코인", "시가", "종가", "고점", "저점", "주간%"], perfRows) + '<div style="margin-top:10px">' + barSVG(d.performance) + '</div>', "#e8e6e3", d.week));
-  parts.push(makeCard("시그널 회고", makeTable(["날짜", "코인", "시그널", "진입", "현재", "결과", "수익"], sigRows) + ibox("시그널 " + wr + "/" + d.signalReview.length + " 적중. 극단적 공포 구간 롱 시그널 전체 WIN."), winColor, wr + "/" + d.signalReview.length + " WIN"));
-  parts.push(makeCard("섹터 로테이션", '<div style="margin-top:4px">' + hbarSVG(d.sectors) + '</div>' + ibox("AI 섹터 +8.5% 최강. Meme -2.3% 유일 약세."), "#6c5ce7", "주간"));
+  parts.push(narrativeHtml);
+  parts.push(makeCard("주간 성과표",
+    makeTable(["코인", "시가", "종가", "고점", "저점", "주간%"], perfRows) +
+    '<div style="margin-top:10px">' + barSVG(d.performance) + '</div>',
+    "#e8e6e3", d.week));
+  parts.push(makeCard("시그널 회고",
+    makeTable(["날짜", "코인", "시그널", "진입", "현재", "결과", "수익"], sigRows) +
+    ibox("해석", "시그널 " + wr + "/" + d.signalReview.length + " 적중. 극단적 공포 구간에서의 롱 시그널이 전부 맞았다. 감정과 반대로 움직이는 구조적 접근의 효과."),
+    winColor, wr + "/" + d.signalReview.length + " WIN"));
+  parts.push(makeCard("섹터 로테이션",
+    '<div style="margin-top:4px">' + hbarSVG(d.sectors) + '</div>' + ibox("해석", d.sectorInterpret),
+    "#6c5ce7", "주간"));
+  parts.push(makeCard("다음 주 시나리오", scenHtml, "#00ffa3", "포지션 준비"));
   parts.push(makeCard("매크로 캘린더", makeTable(["날짜", "이벤트", "영향도", "비고"], macroRows), "#ff6b35", "다음 주"));
-  parts.push(makeCard("포지션 체크리스트", scenHtml, "#00ffa3", "다음 주 준비"));
   parts.push(makeCard("이번 주 기억할 것 3가지", remHtml, "#ffaa00"));
-  parts.push('<div class="footer">이 리포트는 투자 조언이 아닌 시장 구조 분석입니다.</div>');
+  parts.push('<div class="footer">이 리포트는 투자 조언이 아닌 시장 구조 분석입니다.<br>모든 투자 결정과 결과의 책임은 본인에게 있습니다.</div>');
   return parts.join("");
 }
 
@@ -477,18 +657,18 @@ async function fetchReport() {
   try {
     var isD = currentMode === "daily";
     var sys = isD
-      ? 'You are a crypto data API. Return ONLY valid JSON, no markdown, no backticks. Schema: {"date":"YYYY-MM-DD","narrative":{"tags":["#tag1"],"summary":""},"prices":[{"symbol":"BTC","price":0,"change":0}],"metrics":{"totalMcap":"","btcD":0,"fng":0,"fngLabel":"","fngStreak":0,"funding":0,"oi":"","oiChange":0,"totalOI":"","totalOIChange":0},"tradfi":[{"label":"","price":"","change":0}],"signals":[{"symbol":"","signal":"LONG","priority":3,"tags":"","interpretation":"","counter":""}],"alerts":[{"target":"","event":"","reason":""}],"liqMap":[{"symbol":"","longLiq":"","shortLiq":""}],"netflow":[{"symbol":"","direction":"","amount":"","meaning":""}],"structure":[{"label":"","value":"","change":0}],"remember":["","",""]}'
-      : 'You are a crypto data API. Return ONLY valid JSON, no markdown, no backticks. Schema: {"week":"YYYY-MM-DD ~ MM-DD","narrative":{"tags":[],"summary":""},"performance":[{"symbol":"BTC","open":0,"close":0,"high":0,"low":0,"weekPct":0}],"signalReview":[{"date":"MM-DD","symbol":"","signal":"LONG","entry":0,"current":0,"result":"WIN","pct":0}],"sectors":[{"name":"","change":0}],"scenarios":[{"symbol":"","bullish":"","bearish":"","keyLevel":""}],"macroCalendar":[{"date":"","event":"","impact":"상","note":""}],"remember":["","",""]}';
+      ? 'You are a Korean crypto market analyst. Return ONLY valid JSON, no markdown, no backticks. Use web search to get real data. Schema (all Korean text, except technical terms like ETF/OI/FOMC/BTC/ETH): {"date":"YYYY-MM-DD","narrative":{"tags":["#tag1","#tag2"],"summary":"2-sentence story of the day in Korean","context":"beginner-friendly 1-sentence explanation"},"prices":[{"symbol":"BTC","price":0,"change":0,"hint":"one-line Korean description"}],"metrics":{"totalMcap":"","btcD":0,"fng":0,"fngLabel":"","fngStreak":0,"funding":0,"oi":"","oiChange":0,"totalOI":"","totalOIChange":0},"tradfi":[{"label":"","price":"","change":0,"hint":""}],"tradfiInterpret":"causal chain interpretation in Korean","watchlist":[{"symbol":"","stars":"★★★","signal":"LONG","reason":""}],"alerts":[{"target":"","event":"","reason":"","why":"beginner explanation"}],"liqMap":[{"symbol":"","longLiq":"","shortLiq":"","longExplain":"","shortExplain":""}],"liqInterpret":"","netflow":[{"symbol":"","direction":"유출","amount":"","meaning":"","interpret":""}],"flowInterpret":"","signals":[{"symbol":"","signal":"LONG","priority":3,"factors":[{"label":"","detail":""}],"interpretation":"","counter":""}],"structure":[{"label":"","value":"","change":0,"hint":""}],"structInterpret":"","events":[{"date":"","name":"","impact":""}],"remember":[{"title":"","sub":""}]}'
+      : 'You are a Korean crypto market analyst. Return ONLY valid JSON, no markdown, no backticks. Schema: {"week":"YYYY-MM-DD ~ MM-DD","narrative":{"tags":[],"summary":"","context":""},"performance":[{"symbol":"BTC","open":0,"close":0,"high":0,"low":0,"weekPct":0}],"signalReview":[{"date":"MM-DD","symbol":"","signal":"LONG","entry":0,"current":0,"result":"WIN","pct":0}],"sectors":[{"name":"","change":0}],"sectorInterpret":"","scenarios":[{"symbol":"","bullish":"","bearish":"","keyLevel":""}],"macroCalendar":[{"date":"","event":"","impact":"상","note":""}],"remember":[{"title":"","sub":""}]}';
 
     var res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 3000,
+        max_tokens: 4000,
         system: sys,
         tools: [{ type: "web_search_20250305", name: "web_search" }],
-        messages: [{ role: "user", content: isD ? "Get today's crypto market data and return the JSON." : "Get this week's crypto market data and return the JSON." }]
+        messages: [{ role: "user", content: isD ? "Search for today's crypto market data (BTC, ETH, SOL, XAUT prices, Fear & Greed, funding rates, OI, ETF flows, liquidation data, exchange netflow, SPX, QQQ, KOSPI, oil) and return the complete JSON report." : "Search for this week's crypto market data and return the complete weekly JSON report." }]
       })
     });
     var data = await res.json();
