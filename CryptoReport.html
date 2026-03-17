@@ -1,0 +1,462 @@
+import { useState, useEffect, useCallback } from "react";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
+
+const MOCK_DAILY = {
+  date: "2026-03-16",
+  narrative: { tags: ["#숏스퀴즈", "#기관매집"], summary: "BTC 네거티브 펀딩 상태에서 스팟 ETF $767M 유입이 숏 청산을 촉발. ETH는 고래 매집 + ETF 유입이 동시에 겹치면서 알트 반등을 주도." },
+  prices: [
+    { symbol: "BTC", price: 73795, change: 3.2, category: "L1" },
+    { symbol: "ETH", price: 2264, change: 7.5, category: "L1" },
+    { symbol: "SOL", price: 93.66, change: 1.5, category: "L1" },
+    { symbol: "XAUT", price: 4971, change: 0.1, category: "Commodity" },
+  ],
+  metrics: {
+    totalMcap: "2.52T", mcapChange: 3.4,
+    btcD: 56.9, fng: 15, fngLabel: "Extreme Fear", fngStreak: 38,
+    funding: -0.010, oi: "687,200 BTC", oiChange: 5,
+    totalOI: "$107.6B", totalOIChange: 5,
+  },
+  tradfi: [
+    { label: "S&P 500", price: "6,632", change: -0.61 },
+    { label: "QQQ", price: "593.72", change: -0.59 },
+    { label: "TSLA", price: "391.20", change: -0.96 },
+    { label: "KOSPI", price: "5,550", change: 1.14 },
+    { label: "Oil", price: "$104", change: 2.1 },
+  ],
+  signals: [
+    { symbol: "ETH", signal: "LONG", priority: 3, tags: "고래매집 + ETF유입 + OI신고 + 풋소멸", interpretation: "4개 요소 동시 정렬 = 기관 매집 패턴. $2,200 지지 시 $2,400-$2,500 테스트.", counter: "BTC $74K 돌파 실패 시 동반 하락. FOMC 매파 발언 리스크." },
+    { symbol: "BTC", signal: "LONG", priority: 2, tags: "숏스퀴즈 세팅 + ETF유입", interpretation: "$74,300 돌파 시 $80K 열림. 네거티브 펀딩 + 스팟 매수 = 스퀴즈 구조.", counter: "FOMC 매파 → 리스크오프. 유가 $100+ 지속 → 금리인하 기대 후퇴." },
+  ],
+  alerts: [
+    { target: "BTC", event: "30분 내 $1,800 급등", reason: "숏 $113M 강제 청산" },
+    { target: "ETH", event: "24h +7.5% 급등", reason: "Voorhees $49M 매집 + ETF $161M" },
+    { target: "심리", event: "공포탐욕 15, 38일 연속", reason: "2022 루나 이후 최장 극단적 공포" },
+    { target: "매크로", event: "FOMC 내일 시작", reason: "금리 동결 예상, 파월 발언이 변수" },
+  ],
+  liqMap: [
+    { symbol: "BTC", longLiq: "$71,200-$71,800", shortLiq: "$75,000-$76,500" },
+    { symbol: "ETH", longLiq: "$2,100-$2,150", shortLiq: "$2,350-$2,400" },
+  ],
+  netflow: [
+    { symbol: "BTC", direction: "유출", amount: "-12,400 BTC", meaning: "홀딩 시그널" },
+    { symbol: "ETH", direction: "유출", amount: "-48,000 ETH", meaning: "콜드월렛 이동" },
+  ],
+  structure: [
+    { label: "TOTAL", value: "2.491T", change: 1.58 },
+    { label: "TOTAL2", value: "1.015T", change: 1.91 },
+    { label: "TOTAL3", value: "741.4B", change: 1.15 },
+    { label: "USDT.D", value: "7.387%", change: -1.58 },
+    { label: "TOTALDEFI", value: "78.1B", change: 2.25 },
+  ],
+  remember: [
+    "ETH가 주인공. 고래 매집 + ETF 유입 + OI 증가 + 풋 소멸 동시 발생 = 기관 매집 패턴.",
+    "가격 ↑ vs 심리 ↓ 괴리. 공포탐욕 15인데 BTC는 40일 고점. 괴리 해소 시 큰 움직임.",
+    "내일 FOMC가 분기점. 금리 동결은 기정사실. 파월 발언 톤이 이번 주 방향 결정.",
+  ],
+};
+
+const MOCK_WEEKLY = {
+  week: "2026-03-10 ~ 03-16",
+  narrative: { tags: ["#극단공포속반등", "#ETH기관매집", "#FOMC대기"], summary: "38일 연속 Extreme Fear에도 BTC는 $66K→$74K 레인지 상단을 테스트. ETH는 Voorhees 매집과 ETF 3주 연속 유입으로 주간 +12% 기록. 유가 $100+ 지속과 FOMC 대기가 상방 제한 요인으로 작용." },
+  performance: [
+    { symbol: "BTC", open: 70100, close: 73795, high: 74300, low: 69200, weekPct: 5.3 },
+    { symbol: "ETH", open: 2020, close: 2264, high: 2280, low: 1960, weekPct: 12.1 },
+    { symbol: "SOL", open: 85, close: 93.66, high: 95, low: 82, weekPct: 10.2 },
+    { symbol: "XAUT", open: 4990, close: 4971, high: 5010, low: 4950, weekPct: -0.4 },
+  ],
+  signalReview: [
+    { date: "03-11", symbol: "BTC", signal: "LONG", entry: 70200, current: 73795, result: "WIN", pct: 5.1 },
+    { date: "03-13", symbol: "ETH", signal: "LONG", entry: 2133, current: 2264, result: "WIN", pct: 6.1 },
+    { date: "03-12", symbol: "SOL", signal: "LONG", entry: 88, current: 93.66, result: "WIN", pct: 6.4 },
+  ],
+  sectors: [
+    { name: "L1", change: 7.2, flow: "유입" },
+    { name: "DeFi", change: 5.8, flow: "유입" },
+    { name: "L2", change: 3.1, flow: "소폭유입" },
+    { name: "AI", change: 8.5, flow: "강한유입" },
+    { name: "Meme", change: -2.3, flow: "유출" },
+    { name: "Infra", change: 1.5, flow: "중립" },
+  ],
+  scenarios: [
+    { symbol: "BTC", bullish: "$74,300 돌파 + 거래량 동반 → $80,000", bearish: "$70,500 이탈 → $66,000 재테스트", keyLevel: "저항 $74,300 / 지지 $70,500" },
+    { symbol: "ETH", bullish: "$2,200 지지 유지 → $2,500", bearish: "$2,100 이탈 → $1,960", keyLevel: "저항 $2,400 / 지지 $2,200" },
+    { symbol: "SOL", bullish: "$95 돌파 → $105", bearish: "$88 이탈 → $82", keyLevel: "저항 $95 / 지지 $88" },
+  ],
+  macroCalendar: [
+    { date: "3/17-18", event: "FOMC", impact: "상", note: "금리 동결 예상. 파월 발언 톤이 핵심" },
+    { date: "3/19", event: "미국 주택착공", impact: "중", note: "경기 선행지표" },
+    { date: "3/21", event: "유럽 PMI 속보", impact: "중", note: "글로벌 경기 센티먼트" },
+  ],
+  remember: [
+    "ETH 주간 +12% — 기관 매집 구조 확인. $2,200 지지 여부가 다음 주 핵심.",
+    "시그널 3/3 WIN — 극단적 공포 구간에서의 롱 시그널 적중률 100%.",
+    "FOMC + 유가가 다음 주 최대 변수. 파월 매파 발언 시 이번 주 상승분 반납 가능.",
+  ],
+};
+
+const STARS = { 3: "★★★", 2: "★★", 1: "★", 0: "☆" };
+const fmtPrice = (p) => p >= 10000 ? `$${p.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : p >= 1 ? `$${p.toLocaleString("en-US", { maximumFractionDigits: 2 })}` : `$${p.toFixed(4)}`;
+const fmtPct = (p) => `${p >= 0 ? "+" : ""}${p.toFixed(1)}%`;
+const pctColor = (p) => p > 0 ? "#00ffa3" : p < 0 ? "#ff4466" : "#8a8f98";
+
+const FearGauge = ({ value, label, streak }) => {
+  const angle = (value / 100) * 180 - 90;
+  const gaugeColor = value <= 25 ? "#ff4466" : value <= 50 ? "#ffaa00" : value <= 75 ? "#88cc44" : "#00ffa3";
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+      <svg width="120" height="68" viewBox="0 0 120 68">
+        <path d="M10 60 A50 50 0 0 1 110 60" fill="none" stroke="#1e2028" strokeWidth="8" strokeLinecap="round" />
+        <path d="M10 60 A50 50 0 0 1 110 60" fill="none" stroke={gaugeColor} strokeWidth="8" strokeLinecap="round" strokeDasharray={`${(value / 100) * 157} 157`} style={{ filter: `drop-shadow(0 0 6px ${gaugeColor}40)` }} />
+        <line x1="60" y1="58" x2={60 + 36 * Math.cos((angle * Math.PI) / 180)} y2={58 + 36 * Math.sin((angle * Math.PI) / 180)} stroke="#e8e6e3" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="60" cy="58" r="3" fill="#e8e6e3" />
+      </svg>
+      <span style={{ fontSize: 28, fontWeight: 800, color: gaugeColor, fontFamily: "'JetBrains Mono', monospace", letterSpacing: -1 }}>{value}</span>
+      <span style={{ fontSize: 11, color: gaugeColor, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
+      {streak && <span style={{ fontSize: 10, color: "#8a8f98" }}>{streak}일 연속</span>}
+    </div>
+  );
+};
+
+const Tag = ({ children, color = "#00ffa3" }) => (
+  <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: `${color}18`, color, border: `1px solid ${color}30`, marginRight: 4, marginBottom: 2 }}>{children}</span>
+);
+
+const SignalBadge = ({ signal, priority }) => {
+  const color = signal === "LONG" ? "#00ffa3" : signal === "SHORT" ? "#ff4466" : "#8a8f98";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <span style={{ color, fontWeight: 700, fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>{signal === "LONG" ? "▲" : signal === "SHORT" ? "▼" : "—"} {signal || "—"}</span>
+      <span style={{ color: priority >= 3 ? "#ffaa00" : priority >= 2 ? "#00ffa3" : "#8a8f98", fontSize: 12 }}>{STARS[priority] || "☆"}</span>
+    </div>
+  );
+};
+
+const Card = ({ title, children, accent, badge, style: s }) => (
+  <div style={{ background: "#13141a", border: "1px solid #1e2028", borderRadius: 10, padding: "14px 16px", ...s }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+      <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: accent || "#e8e6e3", textTransform: "uppercase", letterSpacing: 1.5 }}>{title}</h3>
+      {badge && <span style={{ fontSize: 10, color: "#8a8f98", background: "#1e2028", padding: "2px 8px", borderRadius: 10 }}>{badge}</span>}
+    </div>
+    {children}
+  </div>
+);
+
+const InterpretBox = ({ children }) => (
+  <div style={{ marginTop: 10, padding: "10px 12px", background: "#0d1117", borderLeft: "3px solid #ffaa00", borderRadius: "0 6px 6px 0", fontSize: 12, color: "#c9cdd4", lineHeight: 1.6 }}>
+    <span style={{ color: "#ffaa00", fontWeight: 700, marginRight: 6 }}>💡</span>{children}
+  </div>
+);
+
+const MiniTable = ({ headers, rows, style: s }) => (
+  <div style={{ overflowX: "auto", ...s }}>
+    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+      <thead>
+        <tr>{headers.map((h, i) => <th key={i} style={{ padding: "6px 8px", textAlign: i === 0 ? "left" : "right", color: "#6b7080", fontWeight: 600, borderBottom: "1px solid #1e2028", fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>{h}</th>)}</tr>
+      </thead>
+      <tbody>
+        {rows.map((row, ri) => (
+          <tr key={ri} style={{ borderBottom: "1px solid #1e202808" }}>
+            {row.map((cell, ci) => <td key={ci} style={{ padding: "7px 8px", textAlign: ci === 0 ? "left" : "right", color: "#c9cdd4", fontFamily: ci > 0 ? "'JetBrains Mono', monospace" : "inherit", fontSize: 12 }}>{cell}</td>)}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+const PriceCard = ({ symbol, price, change, signal, priority }) => (
+  <div style={{ background: "#13141a", border: "1px solid #1e2028", borderRadius: 10, padding: "12px 14px", minWidth: 140, flex: 1 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <span style={{ fontSize: 14, fontWeight: 700, color: "#e8e6e3" }}>{symbol}</span>
+      {signal && <SignalBadge signal={signal} priority={priority} />}
+    </div>
+    <div style={{ fontSize: 22, fontWeight: 800, color: "#e8e6e3", fontFamily: "'JetBrains Mono', monospace", margin: "6px 0 2px", letterSpacing: -0.5 }}>{fmtPrice(price)}</div>
+    <div style={{ fontSize: 13, fontWeight: 600, color: pctColor(change), fontFamily: "'JetBrains Mono', monospace" }}>{fmtPct(change)}</div>
+  </div>
+);
+
+const DailyView = ({ data }) => {
+  const d = data;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <Card title="오늘의 내러티브" accent="#ffaa00">
+        <div style={{ marginBottom: 6 }}>{d.narrative.tags.map((t, i) => <Tag key={i} color="#ffaa00">{t}</Tag>)}</div>
+        <p style={{ margin: 0, fontSize: 13, color: "#c9cdd4", lineHeight: 1.6 }}>{d.narrative.summary}</p>
+      </Card>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8 }}>
+        {d.prices.map((c) => {
+          const sig = d.signals.find(s => s.symbol === c.symbol);
+          return <PriceCard key={c.symbol} {...c} signal={sig?.signal} priority={sig?.priority} />;
+        })}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <Card title="시장 지표" badge="Market">
+          <MiniTable headers={["지표", "값"]} rows={[
+            ["총 시총", d.metrics.totalMcap],
+            ["BTC.D", `${d.metrics.btcD}%`],
+            ["BTC 펀딩", <span style={{ color: d.metrics.funding < 0 ? "#ff4466" : "#00ffa3" }}>{d.metrics.funding}%</span>],
+            ["BTC OI", <span>{d.metrics.oi} <span style={{ color: "#00ffa3", fontSize: 10 }}>+{d.metrics.oiChange}%</span></span>],
+            ["총 선물 OI", <span>{d.metrics.totalOI} <span style={{ color: "#00ffa3", fontSize: 10 }}>+{d.metrics.totalOIChange}%</span></span>],
+          ]} />
+        </Card>
+        <Card title="공포 & 탐욕" badge="Sentiment">
+          <FearGauge value={d.metrics.fng} label={d.metrics.fngLabel} streak={d.metrics.fngStreak} />
+          <InterpretBox>가격은 40일 고점인데 심리는 극단적 공포. 괴리 해소 시 큰 움직임.</InterpretBox>
+        </Card>
+      </div>
+
+      <Card title="외부 시장" badge="TradFi">
+        <MiniTable headers={["지표", "가격", "변동"]} rows={d.tradfi.map(t => [
+          t.label, t.price, <span style={{ color: pctColor(t.change), fontWeight: 600 }}>{fmtPct(t.change)}</span>
+        ])} />
+        <InterpretBox>미국 주식 약세인데 BTC 상승 — 드문 디커플링. BTC-SPX 상관 0.78이므로 지속 어려울 수 있음.</InterpretBox>
+      </Card>
+
+      <Card title="⚠ 이상 감지" accent="#ff4466" badge="Alert">
+        {d.alerts.map((a, i) => (
+          <div key={i} style={{ padding: "8px 0", borderBottom: i < d.alerts.length - 1 ? "1px solid #1e2028" : "none", display: "flex", gap: 8, alignItems: "baseline" }}>
+            <Tag color="#ff4466">{a.target}</Tag>
+            <div>
+              <div style={{ fontSize: 12, color: "#e8e6e3", fontWeight: 600 }}>{a.event}</div>
+              <div style={{ fontSize: 11, color: "#8a8f98", marginTop: 2 }}>{a.reason}</div>
+            </div>
+          </div>
+        ))}
+      </Card>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <Card title="청산 지도" accent="#ff6b35" badge="Liquidation">
+          {d.liqMap.map((l, i) => (
+            <div key={i} style={{ marginBottom: i < d.liqMap.length - 1 ? 10 : 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#e8e6e3", marginBottom: 4 }}>{l.symbol}</div>
+              <div style={{ display: "flex", gap: 6, fontSize: 11 }}>
+                <span style={{ background: "#ff446618", color: "#ff4466", padding: "2px 8px", borderRadius: 4 }}>롱청산 {l.longLiq}</span>
+                <span style={{ background: "#00ffa318", color: "#00ffa3", padding: "2px 8px", borderRadius: 4 }}>숏청산 {l.shortLiq}</span>
+              </div>
+            </div>
+          ))}
+          <InterpretBox>BTC 숏 청산 $75K에 집중. 돌파 시 연쇄 청산으로 가속.</InterpretBox>
+        </Card>
+        <Card title="거래소 자금 흐름" accent="#4ecdc4" badge="On-chain">
+          {d.netflow.map((n, i) => (
+            <div key={i} style={{ padding: "6px 0", borderBottom: i < d.netflow.length - 1 ? "1px solid #1e2028" : "none" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontWeight: 700, color: "#e8e6e3", fontSize: 13 }}>{n.symbol}</span>
+                <span style={{ color: n.direction === "유출" ? "#00ffa3" : "#ff4466", fontSize: 12, fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>{n.amount}</span>
+              </div>
+              <div style={{ fontSize: 10, color: "#8a8f98", marginTop: 2 }}>{n.direction} → {n.meaning}</div>
+            </div>
+          ))}
+          <InterpretBox>BTC/ETH 모두 순유출. 매도 가능 물량 감소 + ETF 매수 = 상승 압력.</InterpretBox>
+        </Card>
+      </div>
+
+      {d.signals.map((sig, i) => (
+        <Card key={i} title={`${sig.symbol} 상세분석`} accent={sig.signal === "LONG" ? "#00ffa3" : "#ff4466"} badge={STARS[sig.priority]}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>{sig.tags.split(" + ").map((t, j) => <Tag key={j}>{t}</Tag>)}</div>
+          <InterpretBox>{sig.interpretation}</InterpretBox>
+          <div style={{ marginTop: 8, padding: "8px 12px", background: "#1a0a0a", borderLeft: "3px solid #ff4466", borderRadius: "0 6px 6px 0", fontSize: 12, color: "#ff8899", lineHeight: 1.6 }}>
+            <span style={{ fontWeight: 700, marginRight: 6 }}>⚠ 반대 시나리오:</span>{sig.counter}
+          </div>
+        </Card>
+      ))}
+
+      <Card title="시장 구조 모니터" badge="상급자용" accent="#6c5ce7">
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {d.structure.map((s, i) => (
+            <div key={i} style={{ flex: 1, minWidth: 90, background: "#0d1117", borderRadius: 6, padding: "8px 10px", textAlign: "center" }}>
+              <div style={{ fontSize: 10, color: "#6b7080", marginBottom: 4 }}>{s.label}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#e8e6e3", fontFamily: "'JetBrains Mono', monospace" }}>{s.value}</div>
+              <div style={{ fontSize: 11, color: pctColor(s.change), fontWeight: 600 }}>{fmtPct(s.change)}</div>
+            </div>
+          ))}
+        </div>
+        <InterpretBox>USDT.D -1.58%가 핵심. 현금→코인 자금 이동 중. TOTAL2 {">"} TOTAL = 알트 반등이 BTC보다 강하나, 주도는 ETH.</InterpretBox>
+      </Card>
+
+      <Card title="오늘 기억할 것 3가지" accent="#ffaa00">
+        {d.remember.map((r, i) => (
+          <div key={i} style={{ padding: "8px 0", borderBottom: i < 2 ? "1px solid #1e2028" : "none", display: "flex", gap: 8 }}>
+            <span style={{ color: "#ffaa00", fontWeight: 800, fontSize: 16, lineHeight: 1.4, flexShrink: 0 }}>{i + 1}</span>
+            <span style={{ fontSize: 12, color: "#c9cdd4", lineHeight: 1.5 }}>{r}</span>
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+};
+
+const WeeklyView = ({ data }) => {
+  const d = data;
+  const barData = d.sectors.map(s => ({ ...s, fill: s.change > 0 ? "#00ffa3" : "#ff4466" }));
+  const winRate = d.signalReview.filter(s => s.result === "WIN").length;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <Card title="이번 주 내러티브" accent="#ffaa00">
+        <div style={{ marginBottom: 6 }}>{d.narrative.tags.map((t, i) => <Tag key={i} color="#ffaa00">{t}</Tag>)}</div>
+        <p style={{ margin: 0, fontSize: 13, color: "#c9cdd4", lineHeight: 1.6 }}>{d.narrative.summary}</p>
+      </Card>
+
+      <Card title="주간 성과표" badge={d.week}>
+        <MiniTable headers={["코인", "시가", "종가", "고점", "저점", "주간%"]} rows={d.performance.map(p => [
+          <span style={{ fontWeight: 700 }}>{p.symbol}</span>,
+          fmtPrice(p.open), fmtPrice(p.close), fmtPrice(p.high), fmtPrice(p.low),
+          <span style={{ color: pctColor(p.weekPct), fontWeight: 700 }}>{fmtPct(p.weekPct)}</span>
+        ])} />
+        <div style={{ height: 120, marginTop: 10 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={d.performance} barSize={28}>
+              <XAxis dataKey="symbol" tick={{ fill: "#6b7080", fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis hide />
+              <Tooltip contentStyle={{ background: "#1e2028", border: "1px solid #2a2d38", borderRadius: 8, fontSize: 12 }} labelStyle={{ color: "#e8e6e3" }} itemStyle={{ color: "#00ffa3" }} />
+              <Bar dataKey="weekPct" radius={[4, 4, 0, 0]}>
+                {d.performance.map((p, i) => <Cell key={i} fill={p.weekPct >= 0 ? "#00ffa3" : "#ff4466"} fillOpacity={0.7} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      <Card title="시그널 회고" badge={`${winRate}/${d.signalReview.length} WIN`} accent={winRate === d.signalReview.length ? "#00ffa3" : "#ffaa00"}>
+        <MiniTable headers={["날짜", "코인", "시그널", "진입가", "현재가", "결과", "수익%"]} rows={d.signalReview.map(s => [
+          s.date, <span style={{ fontWeight: 600 }}>{s.symbol}</span>,
+          <span style={{ color: s.signal === "LONG" ? "#00ffa3" : "#ff4466" }}>▲ {s.signal}</span>,
+          fmtPrice(s.entry), fmtPrice(s.current),
+          <span style={{ padding: "1px 6px", borderRadius: 3, fontSize: 10, fontWeight: 700, background: s.result === "WIN" ? "#00ffa318" : s.result === "LOSS" ? "#ff446618" : "#ffaa0018", color: s.result === "WIN" ? "#00ffa3" : s.result === "LOSS" ? "#ff4466" : "#ffaa00" }}>{s.result}</span>,
+          <span style={{ color: pctColor(s.pct), fontWeight: 600 }}>{fmtPct(s.pct)}</span>
+        ])} />
+        <InterpretBox>시그널 {winRate}/{d.signalReview.length} 적중. 극단적 공포 구간 롱 시그널 전체 WIN. 구조적 세팅이 유효했음을 확인.</InterpretBox>
+      </Card>
+
+      <Card title="섹터 로테이션" badge="주간" accent="#6c5ce7">
+        <div style={{ height: 140 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={barData} barSize={24} layout="vertical">
+              <XAxis type="number" tick={{ fill: "#6b7080", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
+              <YAxis type="category" dataKey="name" tick={{ fill: "#c9cdd4", fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
+              <Tooltip contentStyle={{ background: "#1e2028", border: "1px solid #2a2d38", borderRadius: 8, fontSize: 12 }} formatter={v => `${v}%`} />
+              <Bar dataKey="change" radius={[0, 4, 4, 0]}>
+                {barData.map((s, i) => <Cell key={i} fill={s.fill} fillOpacity={0.65} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <InterpretBox>AI 섹터 주간 +8.5% 최강. Meme -2.3% 유일한 약세. 자금이 기술→실용 섹터로 이동 중.</InterpretBox>
+      </Card>
+
+      <Card title="매크로 캘린더" badge="다음 주" accent="#ff6b35">
+        <MiniTable headers={["날짜", "이벤트", "영향도", "비고"]} rows={d.macroCalendar.map(m => [
+          m.date, <span style={{ fontWeight: 600 }}>{m.event}</span>,
+          <span style={{ color: m.impact === "상" ? "#ff4466" : "#ffaa00", fontWeight: 600 }}>{m.impact}</span>,
+          <span style={{ fontSize: 11, color: "#8a8f98" }}>{m.note}</span>
+        ])} />
+      </Card>
+
+      <Card title="포지션 체크리스트" badge="다음 주 준비" accent="#00ffa3">
+        {d.scenarios.map((s, i) => (
+          <div key={i} style={{ padding: "10px 0", borderBottom: i < d.scenarios.length - 1 ? "1px solid #1e2028" : "none" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#e8e6e3", marginBottom: 6 }}>{s.symbol}</div>
+            <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
+              <div style={{ flex: 1, background: "#00ffa30a", border: "1px solid #00ffa320", borderRadius: 6, padding: "6px 10px", fontSize: 11, color: "#00ffa3" }}>
+                <div style={{ fontWeight: 700, marginBottom: 2 }}>시나리오 A (상승)</div>{s.bullish}
+              </div>
+              <div style={{ flex: 1, background: "#ff44660a", border: "1px solid #ff446620", borderRadius: 6, padding: "6px 10px", fontSize: 11, color: "#ff4466" }}>
+                <div style={{ fontWeight: 700, marginBottom: 2 }}>시나리오 B (하락)</div>{s.bearish}
+              </div>
+            </div>
+            <div style={{ fontSize: 10, color: "#8a8f98" }}>핵심 레벨: {s.keyLevel}</div>
+          </div>
+        ))}
+      </Card>
+
+      <Card title="이번 주 기억할 것 3가지" accent="#ffaa00">
+        {d.remember.map((r, i) => (
+          <div key={i} style={{ padding: "8px 0", borderBottom: i < 2 ? "1px solid #1e2028" : "none", display: "flex", gap: 8 }}>
+            <span style={{ color: "#ffaa00", fontWeight: 800, fontSize: 16, lineHeight: 1.4, flexShrink: 0 }}>{i + 1}</span>
+            <span style={{ fontSize: 12, color: "#c9cdd4", lineHeight: 1.5 }}>{r}</span>
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+};
+
+export default function CryptoDashboard() {
+  const [mode, setMode] = useState("daily");
+  const [loading, setLoading] = useState(false);
+  const [dailyData, setDailyData] = useState(MOCK_DAILY);
+  const [weeklyData, setWeeklyData] = useState(MOCK_WEEKLY);
+  const [lastUpdate, setLastUpdate] = useState(new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }));
+
+  const fetchReport = useCallback(async () => {
+    setLoading(true);
+    try {
+      const systemPrompt = mode === "daily"
+        ? `You are a crypto data API. Return ONLY valid JSON matching this exact schema, no markdown, no explanation:\n{"date":"YYYY-MM-DD","narrative":{"tags":["#tag1","#tag2"],"summary":"..."},"prices":[{"symbol":"BTC","price":0,"change":0,"category":"L1"},...],"metrics":{"totalMcap":"","mcapChange":0,"btcD":0,"fng":0,"fngLabel":"","fngStreak":0,"funding":0,"oi":"","oiChange":0,"totalOI":"","totalOIChange":0},"tradfi":[{"label":"","price":"","change":0},...],"signals":[{"symbol":"","signal":"LONG","priority":3,"tags":"","interpretation":"","counter":""},...],"alerts":[{"target":"","event":"","reason":""},...],"liqMap":[{"symbol":"","longLiq":"","shortLiq":""},...],"netflow":[{"symbol":"","direction":"","amount":"","meaning":""},...],"structure":[{"label":"","value":"","change":0},...],"remember":["","",""]}\nFill with real current data. Watchlist: BTC,ETH,SOL,XAUT. TradFi: SPX,QQQ,TSLA,KOSPI,Oil. Structure: TOTAL,TOTAL2,TOTAL3,USDT.D,TOTALDEFI.`
+        : `You are a crypto data API. Return ONLY valid JSON matching this exact schema, no markdown, no explanation:\n{"week":"YYYY-MM-DD ~ MM-DD","narrative":{"tags":["#tag1"],"summary":"..."},"performance":[{"symbol":"BTC","open":0,"close":0,"high":0,"low":0,"weekPct":0},...],"signalReview":[{"date":"MM-DD","symbol":"","signal":"LONG","entry":0,"current":0,"result":"WIN","pct":0},...],"sectors":[{"name":"L1","change":0,"flow":"유입"},...],"scenarios":[{"symbol":"","bullish":"","bearish":"","keyLevel":""},...],"macroCalendar":[{"date":"","event":"","impact":"상","note":""},...],"remember":["","",""]}\nFill with real current data.`;
+      
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 3000,
+          system: systemPrompt,
+          tools: [{ type: "web_search_20250305", name: "web_search" }],
+          messages: [{ role: "user", content: mode === "daily" ? "Get today's crypto market data and return the JSON." : "Get this week's crypto market data and return the JSON." }],
+        }),
+      });
+      const data = await res.json();
+      const textBlock = data.content?.find(b => b.type === "text");
+      if (textBlock?.text) {
+        const clean = textBlock.text.replace(/```json|```/g, "").trim();
+        const parsed = JSON.parse(clean);
+        if (mode === "daily") setDailyData(parsed);
+        else setWeeklyData(parsed);
+        setLastUpdate(new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }));
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
+    setLoading(false);
+  }, [mode]);
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0a0b0f", color: "#e8e6e3", fontFamily: "'IBM Plex Sans', -apple-system, sans-serif", padding: "0 0 40px" }}>
+      <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+      <header style={{ padding: "16px 20px", borderBottom: "1px solid #1e2028", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#0a0b0fee", backdropFilter: "blur(10px)", zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 18, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", letterSpacing: -1 }}>
+            <span style={{ color: "#00ffa3" }}>◆</span> CRYPTO REPORT
+          </span>
+          <span style={{ fontSize: 10, color: "#6b7080", background: "#1e2028", padding: "2px 8px", borderRadius: 10 }}>
+            {lastUpdate}
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <div style={{ display: "flex", background: "#13141a", borderRadius: 8, border: "1px solid #1e2028", overflow: "hidden" }}>
+            {["daily", "weekly"].map(m => (
+              <button key={m} onClick={() => setMode(m)} style={{ padding: "6px 16px", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: mode === m ? "#1e2028" : "transparent", color: mode === m ? "#00ffa3" : "#6b7080", transition: "all 0.2s" }}>
+                {m === "daily" ? "데일리" : "주간"}
+              </button>
+            ))}
+          </div>
+          <button onClick={fetchReport} disabled={loading} style={{ padding: "6px 14px", border: "1px solid #00ffa340", borderRadius: 8, background: loading ? "#1e2028" : "#00ffa310", color: "#00ffa3", fontSize: 11, fontWeight: 600, cursor: loading ? "wait" : "pointer" }}>
+            {loading ? "검색 중..." : "🔄 새로고침"}
+          </button>
+        </div>
+      </header>
+
+      <main style={{ maxWidth: 720, margin: "0 auto", padding: "14px 16px" }}>
+        {mode === "daily" ? <DailyView data={dailyData} /> : <WeeklyView data={weeklyData} />}
+        <div style={{ textAlign: "center", marginTop: 20, fontSize: 10, color: "#4a4f5a" }}>
+          이 리포트는 투자 조언이 아닌 시장 구조 분석입니다.
+        </div>
+      </main>
+    </div>
+  );
+}
