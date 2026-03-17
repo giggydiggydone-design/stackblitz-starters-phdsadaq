@@ -1,170 +1,141 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>◆ CONFLUENCE DECK v3</title>
+<title>◆ CONFLUENCE DECK v4</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg-0:#0A0908; --bg-1:#0E0D0A; --bg-2:#12110E; --bg-3:#1A1810;
-  --border-1:#2A2618; --border-2:#3A3520;
-  --gold:#C8A84E; --gold-dim:#6B6040; --gold-bright:#E8D080;
-  --text:#E8DFC0; --text-dim:#8A8060;
-  --green:#7BC86C; --red:#E8734A; --blue:#6B9BD2; --cyan:#6BC8B8;
+:root{
+  --bg-0:#0A0908;--bg-1:#0E0D0A;--bg-2:#12110E;--bg-3:#1A1810;
+  --border-1:#2A2618;--border-2:#3A3520;
+  --gold:#C8A84E;--gold-dim:#6B6040;--text:#E8DFC0;--text-dim:#8A8060;
+  --green:#7BC86C;--red:#E8734A;--blue:#6B9BD2;--cyan:#6BC8B8;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{
-  background:var(--bg-0); color:var(--text);
-  font-family:'JetBrains Mono',monospace; font-size:11px;
-  min-height:100vh; min-height:100dvh;
-  overscroll-behavior:none;
-  background-image:
-    linear-gradient(rgba(200,168,78,0.01) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(200,168,78,0.01) 1px,transparent 1px);
+  background:var(--bg-0);color:var(--text);
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  min-height:100dvh;overscroll-behavior:none;
+  background-image:linear-gradient(rgba(200,168,78,0.01) 1px,transparent 1px),linear-gradient(90deg,rgba(200,168,78,0.01) 1px,transparent 1px);
   background-size:32px 32px;
 }
 
-/* ─── Header ─── */
-.header{
-  position:sticky;top:0;z-index:100;
-  background:var(--bg-1);border-bottom:1px solid var(--border-1);
-  padding:10px 12px;
-}
-.hdr-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.header{position:sticky;top:0;z-index:100;background:var(–bg-1);border-bottom:1px solid var(–border-1);padding:10px 12px;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;}
 .hdr-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.hdr-logo{font-size:8px;letter-spacing:0.2em;color:var(--gold);font-weight:700;}
+.hdr-logo{font-size:8px;letter-spacing:0.2em;color:var(–gold);font-weight:700;}
 .hdr-coin{font-size:15px;font-weight:500;}
 .hdr-price{font-size:15px;font-weight:700;}
 .hdr-chg{font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;}
 .tf-tabs{display:flex;gap:2px;}
-.tf-tab{
-  padding:6px 12px;cursor:pointer;border:1px solid var(--border-1);
-  background:var(--bg-2);color:var(--text-dim);font-size:11px;
-  font-family:inherit;letter-spacing:0.06em;border-radius:3px;
-  min-width:40px;text-align:center;
-}
-.tf-tab.active{background:var(--border-2);color:var(--gold);border-color:var(--gold-dim);}
+.tf-tab{padding:6px 12px;cursor:pointer;border:1px solid var(–border-1);background:var(–bg-2);color:var(–text-dim);font-size:11px;font-family:inherit;border-radius:3px;min-width:38px;text-align:center;}
+.tf-tab.active{background:var(–border-2);color:var(–gold);border-color:var(–gold-dim);}
 
-/* ─── Coin Strip ─── */
-.coin-strip-wrap{
-  background:var(--bg-1);border-bottom:1px solid var(--border-1);
-}
-.coin-strip{
-  display:flex;gap:3px;overflow-x:auto;padding:8px 10px;
-  scrollbar-width:none;-webkit-overflow-scrolling:touch;
-}
+.coin-strip-wrap{background:var(–bg-1);border-bottom:1px solid var(–border-1);}
+.coin-strip{display:flex;gap:3px;overflow-x:auto;padding:8px 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
 .coin-strip::-webkit-scrollbar{display:none;}
-.coin-chip{
-  flex-shrink:0;padding:8px 12px;background:var(--bg-2);
-  border:1px solid var(--border-1);border-radius:4px;cursor:pointer;
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-  min-width:62px;transition:all 0.12s;
-}
-.coin-chip.active{background:var(--bg-3);border-color:var(--gold-dim);box-shadow:0 0 10px rgba(200,168,78,0.08);}
+.coin-chip{flex-shrink:0;padding:8px 12px;background:var(–bg-2);border:1px solid var(–border-1);border-radius:4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:60px;}
+.coin-chip.active{background:var(–bg-3);border-color:var(–gold-dim);box-shadow:0 0 10px rgba(200,168,78,0.08);}
 .chip-sym{font-size:11px;font-weight:700;white-space:nowrap;}
 .chip-pct{font-size:9px;font-weight:600;}
 
-/* ─── Content ─── */
 .content{padding:8px;display:flex;flex-direction:column;gap:10px;padding-bottom:40px;}
-.panel{background:var(--bg-2);border:1px solid var(--border-1);padding:12px;border-radius:3px;}
-.p-title{
-  font-size:9px;letter-spacing:0.14em;color:var(--gold);
-  margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border-1);
-  display:flex;justify-content:space-between;align-items:center;
-}
+.panel{background:var(–bg-2);border:1px solid var(–border-1);padding:12px;border-radius:3px;}
+.p-title{font-size:9px;letter-spacing:0.14em;color:var(–gold);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(–border-1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;}
 .p-title-r{font-size:12px;font-weight:700;}
 
-/* ─── Interpretation Box ─── */
-.interp{
-  margin-top:8px;padding:8px 10px;
-  background:rgba(200,168,78,0.04);
-  border-left:2px solid var(--gold-dim);
-  border-radius:0 3px 3px 0;
-  font-size:10px;line-height:1.55;color:var(--text);
-}
-.interp-label{
-  font-size:8px;letter-spacing:0.12em;color:var(--gold);
-  margin-bottom:4px;font-weight:600;
-}
-.interp-bias{font-weight:700;padding:1px 5px;border-radius:2px;font-size:10px;display:inline-block;margin-bottom:3px;}
-.interp-bias.long{color:var(--green);background:rgba(123,200,108,0.1);}
-.interp-bias.short{color:var(--red);background:rgba(232,115,74,0.1);}
-.interp-bias.neutral{color:var(--text-dim);background:rgba(138,128,96,0.1);}
-.interp-body{color:var(--text-dim);font-size:10px;line-height:1.6;}
+/* View toggle buttons */
+.view-tog{display:flex;gap:2px;}
+.vt-btn{padding:3px 8px;font-size:8px;font-family:inherit;cursor:pointer;border:1px solid var(–border-1);background:var(–bg-3);color:var(–text-dim);border-radius:2px;letter-spacing:0.05em;}
+.vt-btn.active{background:var(–gold-dim);color:var(–bg-0);border-color:var(–gold);}
 
-/* ─── Chart ─── */
+.interp{margin-top:8px;padding:8px 10px;background:rgba(200,168,78,0.04);border-left:2px solid var(–gold-dim);border-radius:0 3px 3px 0;font-size:10px;line-height:1.55;}
+.interp-label{font-size:8px;letter-spacing:0.12em;color:var(–gold);margin-bottom:4px;font-weight:600;}
+.interp-bias{font-weight:700;padding:1px 5px;border-radius:2px;font-size:10px;display:inline-block;margin-bottom:3px;}
+.interp-bias.long{color:var(–green);background:rgba(123,200,108,0.1);}
+.interp-bias.short{color:var(–red);background:rgba(232,115,74,0.1);}
+.interp-bias.neutral{color:var(–text-dim);background:rgba(138,128,96,0.1);}
+.interp-body{color:var(–text-dim);font-size:10px;line-height:1.6;}
+
 .chart-wrap{position:relative;width:100%;}
 .chart-wrap canvas{display:block;width:100%;}
 .legend{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
-.legend-item{display:flex;align-items:center;gap:3px;font-size:7px;color:var(--text-dim);}
+.legend-item{display:flex;align-items:center;gap:3px;font-size:7px;color:var(–text-dim);}
 .lg-line{width:10px;height:2px;border-radius:1px;}
 .lg-dash{width:10px;height:0;border-top:2px dashed;}
 
-/* ─── CS1 Grid ─── */
+/* CS Grid */
 .cs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;}
-.cs-cell{
-  background:var(--bg-3);border:1px solid var(--border-1);
-  padding:8px 4px;text-align:center;border-radius:3px;
-  display:flex;flex-direction:column;gap:3px;
-}
-.cs-lbl{font-size:7px;color:var(--gold-dim);letter-spacing:0.08em;}
+.cs-cell{background:var(–bg-3);border:1px solid var(–border-1);padding:8px 4px;text-align:center;border-radius:3px;display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:border-color 0.15s,background 0.15s;position:relative;}
+.cs-cell:hover{border-color:var(–gold-dim);background:rgba(200,168,78,0.04);}
+.cs-cell:active{background:rgba(200,168,78,0.08);}
+.cs-lbl{font-size:7px;color:var(–gold-dim);letter-spacing:0.08em;}
 .cs-arr{font-size:16px;font-weight:700;line-height:1;}
-.cs-raw{font-size:8px;color:var(--text-dim);}
-.cs-bar{height:3px;background:var(--bg-1);border-radius:2px;overflow:hidden;margin-top:1px;}
+.cs-raw{font-size:8px;color:var(–text-dim);}
+.cs-bar{height:3px;background:var(–bg-1);border-radius:2px;overflow:hidden;margin-top:1px;}
 .cs-bar-f{height:100%;border-radius:2px;}
 
-/* ─── Signal Row ─── */
-.sig-row{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:8px 10px;background:var(--bg-3);
-  border:1px solid var(--border-1);border-radius:3px;
+/* Factor tooltip */
+.factor-tip{
+display:none;position:fixed;z-index:200;
+background:var(–bg-1);border:1px solid var(–gold-dim);
+border-radius:4px;padding:12px 14px;
+max-width:320px;width:calc(100vw - 32px);
+box-shadow:0 8px 32px rgba(0,0,0,0.6);
+font-size:10px;line-height:1.6;
 }
-.sig-lbl{font-size:9px;color:var(--gold-dim);}
-.sig-val{font-size:12px;font-weight:700;}
-.s-l{color:var(--green);} .s-s{color:var(--red);} .s-n{color:var(--text-dim);}
+.factor-tip.show{display:block;}
+.ft-title{font-size:11px;font-weight:700;color:var(–gold);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+.ft-close{cursor:pointer;color:var(–text-dim);font-size:14px;padding:2px 6px;}
+.ft-close:hover{color:var(–text);}
+.ft-desc{color:var(–text);margin-bottom:6px;}
+.ft-how{color:var(–text-dim);}
+.ft-how b{color:var(–text);font-weight:600;}
 
-/* ─── CS2 Bars ─── */
-.c2-row{
-  display:grid;grid-template-columns:78px 1fr 42px;
-  align-items:center;gap:6px;padding:5px 0;
-  border-bottom:1px solid rgba(42,38,24,0.2);
-}
-.c2-lbl{font-size:8px;color:var(--text-dim);}
-.c2-bg{height:7px;background:var(--bg-1);border-radius:3px;overflow:hidden;}
+.sig-row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(–bg-3);border:1px solid var(–border-1);border-radius:3px;}
+.sig-lbl{font-size:9px;color:var(–gold-dim);}
+.sig-val{font-size:12px;font-weight:700;}
+.s-l{color:var(–green);}.s-s{color:var(–red);}.s-n{color:var(–text-dim);}
+
+.c2-row{display:grid;grid-template-columns:78px 1fr 42px;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(42,38,24,0.2);cursor:pointer;transition:background 0.1s;}
+.c2-row:hover{background:rgba(200,168,78,0.03);}
+.c2-lbl{font-size:8px;color:var(–text-dim);}
+.c2-bg{height:7px;background:var(–bg-1);border-radius:3px;overflow:hidden;}
 .c2-fill{height:100%;border-radius:3px;transition:width 0.3s;}
 .c2-val{font-size:9px;font-weight:600;text-align:right;}
 
-/* ─── Desktop ─── */
+/* Indicator chart area inside panel */
+.ind-chart-area{margin-top:8px;}
+.ind-chart-area canvas{display:block;width:100%;}
+
 .desk-sidebar{display:none;}
 @media(min-width:768px){
-  .coin-strip-wrap{display:none;}
-  .desk-layout{display:grid;grid-template-columns:190px 1fr;}
-  .desk-sidebar{
-    display:block;background:var(--bg-1);border-right:1px solid var(--border-1);
-    overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-2) var(--bg-1);
-    height:calc(100vh - 52px);position:sticky;top:52px;
-  }
-  .sb-title{padding:10px 12px 8px;font-size:9px;letter-spacing:0.2em;color:var(--gold);border-bottom:1px solid var(--border-1);position:sticky;top:0;background:var(--bg-1);z-index:2;}
-  .sb-item{display:grid;grid-template-columns:22px 1fr 50px;align-items:center;padding:6px 10px;cursor:pointer;border-bottom:1px solid rgba(42,38,24,0.3);transition:background 0.1s;}
-  .sb-item:hover{background:var(--bg-2);}
-  .sb-item.active{background:var(--bg-3);border-left:2px solid var(--gold);}
-  .sb-rank{font-size:9px;color:var(--text-dim);}
-  .sb-info{display:flex;flex-direction:column;gap:1px;}
-  .sb-sym{font-size:10px;font-weight:600;}
-  .sb-name{font-size:7px;color:var(--text-dim);}
-  .sb-pct{font-size:10px;font-weight:600;text-align:right;}
-  .content{overflow-y:auto;height:calc(100vh - 52px);}
-  .panels-2col{display:flex;gap:8px;}
-  .panels-2col>.panel{flex:1;min-width:0;}
+.coin-strip-wrap{display:none;}
+.desk-layout{display:grid;grid-template-columns:190px 1fr;}
+.desk-sidebar{display:block;background:var(–bg-1);border-right:1px solid var(–border-1);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(–border-2) var(–bg-1);height:calc(100vh - 52px);position:sticky;top:52px;}
+.sb-title{padding:10px 12px 8px;font-size:9px;letter-spacing:0.2em;color:var(–gold);border-bottom:1px solid var(–border-1);position:sticky;top:0;background:var(–bg-1);z-index:2;}
+.sb-item{display:grid;grid-template-columns:22px 1fr 50px;align-items:center;padding:6px 10px;cursor:pointer;border-bottom:1px solid rgba(42,38,24,0.3);}
+.sb-item:hover{background:var(–bg-2);}
+.sb-item.active{background:var(–bg-3);border-left:2px solid var(–gold);}
+.sb-rank{font-size:9px;color:var(–text-dim);}
+.sb-info{display:flex;flex-direction:column;gap:1px;}
+.sb-sym{font-size:10px;font-weight:600;}
+.sb-name{font-size:7px;color:var(–text-dim);}
+.sb-pct{font-size:10px;font-weight:600;text-align:right;}
+.content{overflow-y:auto;height:calc(100vh - 52px);}
+.panels-2col{display:flex;gap:8px;}
+.panels-2col>.panel{flex:1;min-width:0;}
 }
-@media(max-width:360px){
-  .cs-grid{grid-template-columns:repeat(3,1fr);}
-  .c2-row{grid-template-columns:68px 1fr 36px;}
-}
+@media(max-width:360px){.cs-grid{grid-template-columns:repeat(3,1fr);}.c2-row{grid-template-columns:68px 1fr 36px;}}
+.footer{text-align:center;font-size:7px;color:var(–border-2);padding:16px 8px 24px;}
 
-.footer{text-align:center;font-size:7px;color:var(--border-2);padding:16px 8px 24px;}
+/* Overlay backdrop */
+.tip-backdrop{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:199;background:rgba(0,0,0,0.3);}
+.tip-backdrop.show{display:block;}
 </style>
+
 </head>
 <body>
 
@@ -190,36 +161,158 @@ body{
 <div class="desk-layout">
   <div class="desk-sidebar"><div class="sb-title">WATCHLIST ─ TOP 20</div><div id="sblist"></div></div>
   <div class="content" id="content">
-    <!-- Chart Panel -->
+    <!-- Chart -->
     <div class="panel" id="p-chart">
-      <div class="p-title"><span>EMA + ROLLING VWAP OVERLAY</span><span class="p-title-r" id="ctf"></span></div>
+      <div class="p-title"><span>EMA (10/20/60/120/200/350) + RVWAP (10/20/60/120/200/350)</span><span class="p-title-r" id="ctf"></span></div>
       <div class="chart-wrap"><canvas id="cMain"></canvas></div>
       <div class="chart-wrap" style="margin-top:2px"><canvas id="cVol"></canvas></div>
       <div class="legend" id="lgBox"></div>
       <div class="interp" id="interp-chart"></div>
     </div>
 
-    <!-- CS1 + CS2 -->
-    <div class="panels-2col">
-      <div class="panel">
-        <div class="p-title"><span>CONFLUENCE SNIPER v2.0</span><span class="p-title-r" id="cs1t"></span></div>
-        <div class="cs-grid" id="cs1g"></div>
-        <div class="sig-row" id="cs1s"></div>
-        <div class="interp" id="interp-cs1"></div>
-      </div>
-      <div class="panel">
-        <div class="p-title"><span>CS v2 ─ MOMENTUM</span><span class="p-title-r" id="cs2t"></span></div>
-        <div id="cs2b"></div>
-        <div class="sig-row" id="cs2s" style="margin-top:8px"></div>
-        <div class="interp" id="interp-cs2"></div>
+```
+<div class="panels-2col">
+  <!-- CS1 -->
+  <div class="panel">
+    <div class="p-title">
+      <span>CONFLUENCE SNIPER v2.0</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="view-tog">
+          <button class="vt-btn active" data-panel="cs1" data-view="dash">DASH</button>
+          <button class="vt-btn" data-panel="cs1" data-view="chart">CHART</button>
+        </div>
+        <span class="p-title-r" id="cs1t"></span>
       </div>
     </div>
+    <div id="cs1-dash">
+      <div class="cs-grid" id="cs1g"></div>
+      <div class="sig-row" id="cs1s"></div>
+    </div>
+    <div id="cs1-chart" style="display:none">
+      <div class="ind-chart-area"><canvas id="cs1Canvas"></canvas></div>
+      <div class="legend" id="cs1Lg"></div>
+    </div>
+    <div class="interp" id="interp-cs1"></div>
+  </div>
 
-    <div class="footer">CONFLUENCE DECK v3 — MOCK DATA · NOT FOR LIVE TRADING</div>
+  <!-- CS2 -->
+  <div class="panel">
+    <div class="p-title">
+      <span>CS v2 ─ MOMENTUM</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="view-tog">
+          <button class="vt-btn active" data-panel="cs2" data-view="dash">DASH</button>
+          <button class="vt-btn" data-panel="cs2" data-view="chart">CHART</button>
+        </div>
+        <span class="p-title-r" id="cs2t"></span>
+      </div>
+    </div>
+    <div id="cs2-dash">
+      <div id="cs2b"></div>
+      <div class="sig-row" id="cs2s" style="margin-top:8px"></div>
+    </div>
+    <div id="cs2-chart" style="display:none">
+      <div class="ind-chart-area"><canvas id="cs2Canvas"></canvas></div>
+      <div class="legend" id="cs2Lg"></div>
+    </div>
+    <div class="interp" id="interp-cs2"></div>
+  </div>
+</div>
+<div class="footer">CONFLUENCE DECK v4 — MOCK DATA · NOT FOR LIVE TRADING</div>
+```
+
   </div>
 </div>
 
+<!-- Factor tooltip -->
+
+<div class="tip-backdrop" id="tipBg"></div>
+<div class="factor-tip" id="factorTip">
+  <div class="ft-title"><span id="ftName"></span><span class="ft-close" id="ftClose">✕</span></div>
+  <div class="ft-desc" id="ftDesc"></div>
+  <div class="ft-how" id="ftHow"></div>
+</div>
+
 <script>
+// ═══════════════════════════════════════════════════════════
+// FACTOR DEFINITIONS
+// ═══════════════════════════════════════════════════════════
+const FACTOR_INFO = {
+  "RVWAP": {
+    name: "RVWAP 정렬 (Rolling VWAP Alignment)",
+    desc: "가격이 단기 Rolling VWAP(10/20) 대비 어디에 위치하는지 판단합니다. RVWAP은 거래량 가중 평균 가격으로, 단순 이동평균보다 실제 거래 참여 가격을 더 정확히 반영합니다.",
+    how: "<b>▲ 롱:</b> 가격이 RVWAP 10 & 20 모두 위에 위치 → 매수세가 거래량 기준으로 우위.<br><b>▼ 숏:</b> 가격이 둘 다 아래 → 매도세 우위.<br><b>─ 중립:</b> 혼재 → 방향 불명확."
+  },
+  "RV200": {
+    name: "RVWAP 200 (장기 거래량 가중 추세)",
+    desc: "가격이 장기 Rolling VWAP(200) 위인지 아래인지로 거시적 추세를 판별합니다. 200기간 RVWAP은 장기 평균 거래 가격으로, 이 위에 있으면 대세 상승, 아래면 대세 하락입니다.",
+    how: "<b>▲ 위:</b> 장기 매수자들이 이익 구간 → 상승 추세 유지.<br><b>▼ 아래:</b> 장기 매수자들이 손실 구간 → 매도 압력 증가 가능."
+  },
+  "VW-RSI": {
+    name: "VW-RSI (Volume-Weighted RSI)",
+    desc: "일반 RSI에 거래량 가중치를 적용한 지표입니다. 거래량이 많은 구간의 가격 변동에 더 큰 비중을 두어, 볼륨 없는 가격 움직임을 걸러냅니다.",
+    how: "<b>55 이상:</b> 거래량 확인된 매수 모멘텀 → 롱 편향.<br><b>45 이하:</b> 거래량 확인된 매도 모멘텀 → 숏 편향.<br><b>65+:</b> 과매수 경계. <b>35−:</b> 과매도 반등 가능."
+  },
+  "VW-MACD": {
+    name: "VW-MACD (Volume-Weighted MACD)",
+    desc: "MACD 히스토그램에 거래량을 반영한 지표입니다. 히스토그램이 0 위면 단기 EMA가 장기 EMA를 상회하며 상승 모멘텀, 0 아래면 하락 모멘텀을 의미합니다.",
+    how: "<b>양수:</b> 상승 모멘텀 진행 중.<br><b>음수:</b> 하락 모멘텀 진행 중.<br><b>전환점:</b> 히스토그램이 0선을 교차하는 시점이 모멘텀 전환 시그널."
+  },
+  "TTM-SQ": {
+    name: "TTM Squeeze (변동성 압축)",
+    desc: "볼린저밴드가 켈트너채널 안으로 수축하면 '스퀴즈' 상태로, 큰 움직임 전 에너지 축적 구간입니다. 스퀴즈 해제 시 방향성 폭발이 일어납니다.",
+    how: "<b>▲ 스퀴즈 감지:</b> 현재 변동성 압축 중 → 곧 큰 움직임 예상.<br><b>─ 비활성:</b> 정상 변동성 구간.<br><b>MOM+/−:</b> 스퀴즈 내 모멘텀 방향 (해제 시 이 방향으로 폭발 가능)."
+  },
+  "MFI": {
+    name: "MFI (Money Flow Index)",
+    desc: "가격과 거래량을 결합한 '볼륨 RSI'입니다. 자금의 유입/유출 강도를 0-100으로 수치화합니다. RSI가 가격만 보는 반면, MFI는 실제 자금 흐름을 추적합니다.",
+    how: "<b>55+:</b> 자금 순유입 → 매수 압력 우위.<br><b>45−:</b> 자금 순유출 → 매도 압력 우위.<br><b>80+:</b> 과잉 유입, 되돌림 경계. <b>20−:</b> 극단적 유출, 반등 가능."
+  },
+  "OBV": {
+    name: "OBV 구조 (On-Balance Volume)",
+    desc: "가격 상승일의 거래량을 누적 가산, 하락일의 거래량을 누적 차감합니다. OBV가 자체 EMA(20) 위에 있으면 거래량이 상승을 뒷받침하고 있다는 의미입니다.",
+    how: "<b>ABOVE:</b> OBV > OBV EMA(20) → 거래량이 가격 상승을 지지 중.<br><b>BELOW:</b> OBV < OBV EMA(20) → 거래량이 하락을 지지 또는 상승에 참여하지 않음."
+  },
+  "EMA9 SLOPE": {
+    name: "EMA10 기울기",
+    desc: "단기 EMA(10)의 3봉 대비 기울기를 측정합니다. 기울기가 가파를수록 단기 모멘텀이 강합니다.",
+    how: "<b>+0.2% 이상:</b> 강한 단기 상승 모멘텀.<br><b>−0.2% 이하:</b> 강한 단기 하락 모멘텀.<br><b>기울기 절대값이 클수록</b> 추세 강도가 높지만, 과열 가능성도 함께 상승."
+  },
+  "EMA21 SLOPE": {
+    name: "EMA20 기울기",
+    desc: "중단기 EMA(20)의 5봉 대비 기울기입니다. EMA10보다 느리게 반응하므로, 이 기울기가 같은 방향이면 추세 신뢰도가 높아집니다.",
+    how: "<b>EMA10과 같은 방향:</b> 추세 확인.<br><b>EMA10과 반대 방향:</b> 단기 반등/조정 가능성 → 주의."
+  },
+  "RVWAP SPREAD": {
+    name: "RVWAP 스프레드",
+    desc: "단기 RVWAP(10)과 중기 RVWAP(60) 간의 괴리를 측정합니다. 양수면 단기 거래 가격이 중기보다 높아 상승 모멘텀, 음수면 하락 모멘텀입니다.",
+    how: "<b>양수 확대:</b> 상승 가속 → 모멘텀 강화.<br><b>음수 확대:</b> 하락 가속.<br><b>0 수렴:</b> 모멘텀 소진 또는 방향 전환 임박."
+  },
+  "VOL RATIO": {
+    name: "거래량 비율 (Volume Ratio)",
+    desc: "현재 봉의 거래량을 최근 20봉 평균 거래량으로 나눈 값입니다. 1.0 이상이면 평균 이상의 참여도를 의미합니다.",
+    how: "<b>1.2x 이상:</b> 높은 참여도 → 현재 가격 움직임 신뢰도 상승.<br><b>0.5x 이하:</b> 참여도 저조 → 현 방향의 지속 가능성 의문.<br><b>2.0x+:</b> 이상 급등 → 뉴스 이벤트 또는 기관 진입 가능성."
+  },
+  "MACD CROSS": {
+    name: "MACD 교차",
+    desc: "MACD 라인이 시그널 라인 위에 있는지(골든크로스) 아래에 있는지(데드크로스)를 판단합니다.",
+    how: "<b>▲ 골든크로스:</b> MACD > Signal → 상승 모멘텀 전환.<br><b>▼ 데드크로스:</b> MACD < Signal → 하락 모멘텀 전환.<br><b>0선 위에서 교차:</b> 더 강한 시그널."
+  },
+  "PRICE/EMA50": {
+    name: "가격/EMA60 이격도",
+    desc: "현재 가격이 중기 EMA(60)로부터 얼마나 이탈했는지를 백분율로 측정합니다. 과도한 이탈은 평균회귀 가능성을 높입니다.",
+    how: "<b>+0.5% 이상:</b> EMA60 위 → 상승 추세 유지.<br><b>−0.5% 이하:</b> EMA60 아래 → 하락 추세.<br><b>|2%+| 이탈:</b> 과열/과매도 → 되돌림 경계."
+  },
+  "OBV MOM": {
+    name: "OBV 모멘텀",
+    desc: "최근 5봉 간 OBV 변화량입니다. OBV가 빠르게 상승하면 거래량이 가격 상승에 적극 참여 중이라는 의미입니다.",
+    how: "<b>양수 (큰 값):</b> 거래량이 매수 방향으로 급증 → 강한 매수 모멘텀.<br><b>음수:</b> 거래량이 매도 방향 → 매도 모멘텀.<br><b>0 근처:</b> 거래량 방향성 없음."
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════
 const COINS=[
   {s:"BTC",n:"Bitcoin",p:84250},{s:"ETH",n:"Ethereum",p:3920},{s:"XRP",n:"Ripple",p:2.34},
   {s:"BNB",n:"BNB",p:612},{s:"SOL",n:"Solana",p:178.5},{s:"ADA",n:"Cardano",p:0.72},
@@ -229,7 +322,9 @@ const COINS=[
   {s:"UNI",n:"Uniswap",p:12.3},{s:"BCH",n:"Bitcoin Cash",p:385},{s:"NEAR",n:"NEAR",p:5.42},
   {s:"APT",n:"Aptos",p:9.15},{s:"ICP",n:"Internet Comp",p:11.8},
 ];
+const PERIODS=[10,20,60,120,200,350];
 let SC=0,ST="15m";
+let cs1View="dash",cs2View="dash";
 
 function srng(s){return()=>{s=Math.sin(s)*10000;return s-Math.floor(s);};}
 function gOHLCV(b,n,seed){const r=srng(seed);const d=[];let p=b;for(let i=0;i<n;i++){const dr=(r()-0.48)*(b*0.008);const vl=b*0.003+r()*b*0.012;const o=p,c=p+dr;const h=Math.max(o,c)+r()*vl,l=Math.min(o,c)-r()*vl;const v=500+r()*3000;p=c;d.push({o,h,l,c,v});}return d;}
@@ -239,21 +334,28 @@ function calcRSI(c,p){const r=new Array(c.length).fill(50);if(c.length<p+1)retur
 function calcMFI(oh,p){const m=new Array(oh.length).fill(50);for(let i=p;i<oh.length;i++){let pf=0,nf=0;for(let j=i-p+1;j<=i;j++){const tp=(oh[j].h+oh[j].l+oh[j].c)/3;const pt=j>0?(oh[j-1].h+oh[j-1].l+oh[j-1].c)/3:tp;const mf=tp*oh[j].v;if(tp>pt)pf+=mf;else nf+=mf;}m[i]=nf===0?100:100-100/(1+pf/nf);}return m;}
 function calcMACD(c){const e12=calcEMA(c,12),e26=calcEMA(c,26);const mc=e12.map((v,i)=>v-e26[i]);const sg=calcEMA(mc,9);return{m:mc,s:sg,h:mc.map((v,i)=>v-sg[i])};}
 function calcOBV(oh){const o=[0];for(let i=1;i<oh.length;i++){if(oh[i].c>oh[i-1].c)o.push(o[i-1]+oh[i].v);else if(oh[i].c<oh[i-1].c)o.push(o[i-1]-oh[i].v);else o.push(o[i-1]);}return o;}
+function calcSMA(d,p){const r=[];for(let i=0;i<d.length;i++){const s=Math.max(0,i-p+1);let sum=0;for(let j=s;j<=i;j++)sum+=d[j];r.push(sum/(i-s+1));}return r;}
+function calcBB(cl,p,mult){const sma=calcSMA(cl,p);const upper=[],lower=[];for(let i=0;i<cl.length;i++){const s=Math.max(0,i-p+1);let sq=0;for(let j=s;j<=i;j++)sq+=(cl[j]-sma[i])**2;const std=Math.sqrt(sq/(i-s+1));upper.push(sma[i]+mult*std);lower.push(sma[i]-mult*std);}return{mid:sma,upper,lower};}
+function calcATR(oh,p){const tr=[oh[0].h-oh[0].l];for(let i=1;i<oh.length;i++){tr.push(Math.max(oh[i].h-oh[i].l,Math.abs(oh[i].h-oh[i-1].c),Math.abs(oh[i].l-oh[i-1].c)));}return calcEMA(tr,p);}
+function calcKC(cl,oh,p,mult){const mid=calcEMA(cl,p);const atr=calcATR(oh,p);return{mid,upper:mid.map((v,i)=>v+mult*atr[i]),lower:mid.map((v,i)=>v-mult*atr[i])};}
+function calcSqueeze(bb,kc){return bb.upper.map((v,i)=>bb.upper[i]<kc.upper[i]&&bb.lower[i]>kc.lower[i]);}
 
 const DB={};
 COINS.forEach((coin,ci)=>{
   DB[ci]={};
   ["15m","1h","4h","1D"].forEach((tf,ti)=>{
     const seed=ci*100+ti*1000+42;
-    const oh=gOHLCV(coin.p,120,seed);
+    const N=400; // more bars for longer periods
+    const oh=gOHLCV(coin.p,N,seed);
     const cl=oh.map(d=>d.c);
     const emas={},rvs={};
-    [9,21,50,100,200].forEach(p=>{emas[p]=calcEMA(cl,Math.min(p,cl.length-1));rvs[p]=calcRV(oh,Math.min(p,cl.length-1));});
+    PERIODS.forEach(p=>{emas[p]=calcEMA(cl,Math.min(p,cl.length-1));rvs[p]=calcRV(oh,Math.min(p,cl.length-1));});
 
     const L=oh.length-1;
     const rsiV=calcRSI(cl,14),mfiV=calcMFI(oh,14),md=calcMACD(cl),ov=calcOBV(oh),oe=calcEMA(ov,20);
+    const bb=calcBB(cl,20,2);const kc=calcKC(cl,oh,20,1.5);const sqz=calcSqueeze(bb,kc);
 
-    const f1=(cl[L]>rvs[9][L]&&cl[L]>rvs[21][L])?1:(cl[L]<rvs[9][L]&&cl[L]<rvs[21][L])?-1:0;
+    const f1=(cl[L]>rvs[10][L]&&cl[L]>rvs[20][L])?1:(cl[L]<rvs[10][L]&&cl[L]<rvs[20][L])?-1:0;
     const f2=cl[L]>rvs[200][L]?1:-1;
     const f3=rsiV[L]>55?1:rsiV[L]<45?-1:0;
     const f4=md.h[L]>0?1:-1;
@@ -263,7 +365,7 @@ COINS.forEach((coin,ci)=>{
     const f7=ov[L]>oe[L]?1:-1;
 
     const factors=[
-      {label:"RVWAP",score:f1,raw:((cl[L]/rvs[21][L]-1)*100).toFixed(2)+"%"},
+      {label:"RVWAP",score:f1,raw:((cl[L]/rvs[20][L]-1)*100).toFixed(2)+"%"},
       {label:"RV200",score:f2,raw:((cl[L]/rvs[200][L]-1)*100).toFixed(2)+"%"},
       {label:"VW-RSI",score:f3,raw:rsiV[L].toFixed(1)},
       {label:"VW-MACD",score:f4,raw:md.h[L].toFixed(3)},
@@ -273,31 +375,29 @@ COINS.forEach((coin,ci)=>{
     ];
     const lc=factors.filter(f=>f.score>0).length,sc2=factors.filter(f=>f.score<0).length;
 
-    // EMA/RVWAP analysis for interpretation
-    const emaOrder=[emas[9][L],emas[21][L],emas[50][L],emas[100][L],emas[200][L]];
-    const bullEmaAlign=emaOrder.every((v,i)=>i===0||v<=emaOrder[i-1]);
-    const bearEmaAlign=emaOrder.every((v,i)=>i===0||v>=emaOrder[i-1]);
-    const ema9above50=emas[9][L]>emas[50][L];
-    const priceAboveEma200=cl[L]>emas[200][L];
-    const rvAboveEma=rvs[9][L]>emas[9][L]; // RVWAP > EMA = volume confirms
-    const spread9_200=((emas[9][L]-emas[200][L])/emas[200][L]*100);
+    const emaOrder=PERIODS.map(p=>emas[p][L]);
+    const bullEA=emaOrder.every((v,i)=>i===0||v<=emaOrder[i-1]);
+    const bearEA=emaOrder.every((v,i)=>i===0||v>=emaOrder[i-1]);
+    const e10a60=emas[10][L]>emas[60][L];
+    const pA200=cl[L]>emas[200][L];
+    const rvAe=rvs[10][L]>emas[10][L];
+    const sp10_200=((emas[10][L]-emas[200][L])/emas[200][L]*100);
 
-    // CS2 momentum factors
-    const e9s=L>3?(emas[9][L]-emas[9][L-3])/emas[9][L-3]*100:0;
-    const e21s=L>5?(emas[21][L]-emas[21][L-5])/emas[21][L-5]*100:0;
-    const rvSp=(rvs[9][L]-rvs[50][L])/rvs[50][L]*100;
+    const e10s=L>3?(emas[10][L]-emas[10][L-3])/emas[10][L-3]*100:0;
+    const e20s=L>5?(emas[20][L]-emas[20][L-5])/emas[20][L-5]*100:0;
+    const rvSp=(rvs[10][L]-rvs[60][L])/rvs[60][L]*100;
     const volR=oh[L].v/(oh.slice(-20).reduce((s,d)=>s+d.v,0)/20);
     const maCr=md.m[L]>md.s[L]?1:-1;
-    const pE50=(cl[L]-emas[50][L])/emas[50][L]*100;
+    const pE60=(cl[L]-emas[60][L])/emas[60][L]*100;
     const oMom=L>5?ov[L]-ov[L-5]:0;
 
     const cs2F=[
-      {label:"EMA9 SLOPE",value:e9s,max:2,score:e9s>0.2?1:e9s<-0.2?-1:0},
-      {label:"EMA21 SLOPE",value:e21s,max:2,score:e21s>0.15?1:e21s<-0.15?-1:0},
+      {label:"EMA9 SLOPE",value:e10s,max:2,score:e10s>0.2?1:e10s<-0.2?-1:0},
+      {label:"EMA21 SLOPE",value:e20s,max:2,score:e20s>0.15?1:e20s<-0.15?-1:0},
       {label:"RVWAP SPREAD",value:rvSp,max:3,score:rvSp>0.1?1:rvSp<-0.1?-1:0},
       {label:"VOL RATIO",value:volR,max:3,score:volR>1.2?1:0},
       {label:"MACD CROSS",value:maCr,max:1,score:maCr},
-      {label:"PRICE/EMA50",value:pE50,max:5,score:pE50>0.5?1:pE50<-0.5?-1:0},
+      {label:"PRICE/EMA50",value:pE60,max:5,score:pE60>0.5?1:pE60<-0.5?-1:0},
       {label:"OBV MOM",value:oMom,max:5000,score:oMom>100?1:oMom<-100?-1:0},
     ];
     const c2l=cs2F.filter(f=>f.score>0).length,c2s=cs2F.filter(f=>f.score<0).length;
@@ -305,10 +405,12 @@ COINS.forEach((coin,ci)=>{
 
     DB[ci][tf]={
       oh,cl,emas,rvs,factors,lc,sc:sc2,cs2F,c2l,c2s,chg,lp:cl[L],
-      // extra for interpretation
-      bullEmaAlign,bearEmaAlign,ema9above50,priceAboveEma200,rvAboveEma,
-      spread9_200,rsi:rsiV[L],mfi:mfiV[L],e9s,e21s,rvSp,volR,pE50,oMom,
+      bullEA,bearEA,e10a60,pA200,rvAe,sp10_200,
+      rsi:rsiV[L],mfi:mfiV[L],e10s,e20s,rvSp,volR,pE60,oMom,
       macdHist:md.h[L],macdCross:maCr,
+      // full series for chart views
+      rsiSeries:rsiV,mfiSeries:mfiV,macdData:md,obvSeries:ov,obvEma:oe,
+      bb,kc,sqz,
     };
   });
 });
@@ -316,136 +418,60 @@ COINS.forEach((coin,ci)=>{
 // ═══════════════════════════════════════════════════════════
 // INTERPRETATIONS
 // ═══════════════════════════════════════════════════════════
-function interpChart(d,sym){
+function interpChart(d){
   let bias,lines=[];
-
-  // EMA structure
-  if(d.bullEmaAlign){
-    bias="long";
-    lines.push("EMA 완전 정배열 (9>21>50>100>200). 강한 상승 추세 구조.");
-  } else if(d.bearEmaAlign){
-    bias="short";
-    lines.push("EMA 완전 역배열 (9<21<50<100<200). 강한 하락 추세 구조.");
-  } else if(d.ema9above50 && d.priceAboveEma200){
-    bias="long";
-    lines.push("단기 EMA(9)가 중기(50) 위, 가격이 EMA200 위. 상승 편향이나 완전 정배열은 아님.");
-  } else if(!d.ema9above50 && !d.priceAboveEma200){
-    bias="short";
-    lines.push("단기 EMA(9)가 중기(50) 아래, 가격이 EMA200 아래. 하락 편향.");
-  } else {
-    bias="neutral";
-    lines.push("EMA 구조 혼조. 단기/장기 방향 불일치 → 횡보 또는 전환 구간.");
-  }
-
-  // RVWAP vs EMA
-  if(d.rvAboveEma){
-    lines.push("RVWAP(9) > EMA(9): 거래량 가중 가격이 단순 평균보다 높음 → 매수세 거래량 우위.");
-  } else {
-    lines.push("RVWAP(9) < EMA(9): 거래량 가중 가격이 낮음 → 매도세 거래량에서 발생 중.");
-  }
-
-  // Spread
-  const sp=Math.abs(d.spread9_200).toFixed(2);
-  if(Math.abs(d.spread9_200)>2){
-    lines.push(`EMA9-200 스프레드 ${sp}%로 확대 → 추세 성숙/과열 가능성 모니터링.`);
-  } else if(Math.abs(d.spread9_200)<0.5){
-    lines.push(`EMA9-200 스프레드 ${sp}%로 수렴 → 큰 움직임 전 압축 구간 가능.`);
-  }
-
-  return {bias,lines};
+  if(d.bullEA){bias="long";lines.push("EMA 완전 정배열 (10>20>60>120>200>350). 강한 상승 추세 구조.");}
+  else if(d.bearEA){bias="short";lines.push("EMA 완전 역배열. 강한 하락 추세 구조.");}
+  else if(d.e10a60&&d.pA200){bias="long";lines.push("단기 EMA(10) > 중기(60), 가격 > EMA200. 상승 편향이나 완전 정배열은 아님.");}
+  else if(!d.e10a60&&!d.pA200){bias="short";lines.push("EMA(10)<EMA(60), 가격<EMA200. 하락 편향.");}
+  else{bias="neutral";lines.push("EMA 구조 혼조. 횡보 또는 전환 구간.");}
+  if(d.rvAe) lines.push("RVWAP(10)>EMA(10): 매수세 거래량 우위.");
+  else lines.push("RVWAP(10)<EMA(10): 매도세 거래량에서 발생 중.");
+  const sp=Math.abs(d.sp10_200).toFixed(2);
+  if(Math.abs(d.sp10_200)>2) lines.push(`EMA10-200 스프레드 ${sp}% 확대 → 과열 모니터링.`);
+  else if(Math.abs(d.sp10_200)<0.5) lines.push(`EMA10-200 스프레드 ${sp}% 수렴 → 압축 구간.`);
+  return{bias,lines};
 }
-
-function interpCS1(d,sym){
+function interpCS1(d){
   let bias,lines=[];
-  const {lc,sc,rsi,mfi,macdHist}=d;
-  const total=lc+sc;
-
-  if(lc>=5){
-    bias="long";
-    lines.push(`7개 팩터 중 ${lc}개 롱 정렬. 다중 시그널 컨플루언스 확인 → 매수 우위 구조.`);
-  } else if(sc>=5){
-    bias="short";
-    lines.push(`7개 팩터 중 ${sc}개 숏 정렬. 다중 시그널 컨플루언스 확인 → 매도 우위 구조.`);
-  } else if(lc>=4){
-    bias="long";
-    lines.push(`롱 ${lc}/7로 매수 편향이나 완전 컨플루언스(5+)에 미달. 진입 전 추가 확인 필요.`);
-  } else if(sc>=4){
-    bias="short";
-    lines.push(`숏 ${sc}/7로 매도 편향이나 완전 컨플루언스(5+)에 미달.`);
-  } else {
-    bias="neutral";
-    lines.push(`롱 ${lc} / 숏 ${sc} — 방향성 불명확. 명확한 컨플루언스 형성까지 관망.`);
-  }
-
-  // Key factor highlights
-  if(rsi>65) lines.push(`VW-RSI ${rsi.toFixed(0)} → 과매수 영역 진입. 단기 되돌림 경계.`);
-  else if(rsi<35) lines.push(`VW-RSI ${rsi.toFixed(0)} → 과매도 영역. 반등 가능성.`);
-  if(mfi>70) lines.push(`MFI ${mfi.toFixed(0)} → 자금 유입 강세. 볼륨 확인된 매수압.`);
-  else if(mfi<30) lines.push(`MFI ${mfi.toFixed(0)} → 자금 유출. 볼륨 확인된 매도압.`);
-
-  return {bias,lines};
+  if(d.lc>=5){bias="long";lines.push(`7팩터 중 ${d.lc}개 롱 정렬. 컨플루언스 확인 → 매수 우위.`);}
+  else if(d.sc>=5){bias="short";lines.push(`7팩터 중 ${d.sc}개 숏 정렬. 컨플루언스 확인 → 매도 우위.`);}
+  else if(d.lc>=4){bias="long";lines.push(`롱 ${d.lc}/7. 매수 편향이나 완전 컨플루언스(5+) 미달.`);}
+  else if(d.sc>=4){bias="short";lines.push(`숏 ${d.sc}/7. 매도 편향이나 컨플루언스 미달.`);}
+  else{bias="neutral";lines.push(`롱 ${d.lc}/숏 ${d.sc}. 방향성 불명확. 관망.`);}
+  if(d.rsi>65) lines.push(`VW-RSI ${d.rsi.toFixed(0)} → 과매수 경계.`);
+  else if(d.rsi<35) lines.push(`VW-RSI ${d.rsi.toFixed(0)} → 과매도 반등 가능.`);
+  if(d.mfi>70) lines.push(`MFI ${d.mfi.toFixed(0)} → 자금 유입 강세.`);
+  else if(d.mfi<30) lines.push(`MFI ${d.mfi.toFixed(0)} → 자금 유출.`);
+  return{bias,lines};
 }
-
-function interpCS2(d,sym){
+function interpCS2(d){
   let bias,lines=[];
-  const {c2l,c2s,e9s,e21s,volR,pE50,oMom}=d;
-
-  if(c2l>=5){
-    bias="long";
-    lines.push(`모멘텀 ${c2l}/7 롱. 기울기+볼륨+OBV가 상승 방향으로 수렴.`);
-  } else if(c2s>=5){
-    bias="short";
-    lines.push(`모멘텀 ${c2s}/7 숏. 하락 모멘텀이 다수 팩터에서 확인.`);
-  } else {
-    bias="neutral";
-    lines.push(`모멘텀 혼조 (L${c2l}/S${c2s}). 방향 전환 또는 횡보 구간.`);
-  }
-
-  // Specific momentum details
-  if(Math.abs(e9s)>0.5) lines.push(`EMA9 기울기 ${e9s>0?"+":""}${e9s.toFixed(2)}% → ${e9s>0?"가파른 상승":"급격한 하락"} 단기 모멘텀.`);
-  if(volR>1.5) lines.push(`거래량 비율 ${volR.toFixed(1)}x → 평균 대비 높은 참여도. 움직임 신뢰도 상승.`);
-  else if(volR<0.5) lines.push(`거래량 비율 ${volR.toFixed(1)}x → 저조. 현 움직임의 지속 가능성 의문.`);
-  if(Math.abs(pE50)>2) lines.push(`가격이 EMA50 대비 ${pE50>0?"+":""}${pE50.toFixed(1)}% 이탈 → ${Math.abs(pE50)>4?"과도한 이탈, 평균회귀 경계":"추세 진행 중"}.`);
-
-  return {bias,lines};
+  if(d.c2l>=5){bias="long";lines.push(`모멘텀 ${d.c2l}/7 롱. 기울기+볼륨+OBV 상승 수렴.`);}
+  else if(d.c2s>=5){bias="short";lines.push(`모멘텀 ${d.c2s}/7 숏. 하락 모멘텀 다수 확인.`);}
+  else{bias="neutral";lines.push(`모멘텀 혼조 (L${d.c2l}/S${d.c2s}). 횡보 구간.`);}
+  if(Math.abs(d.e10s)>0.5) lines.push(`EMA10 기울기 ${d.e10s>0?"+":""}${d.e10s.toFixed(2)}% → ${d.e10s>0?"강한 상승":"급격한 하락"} 단기 모멘텀.`);
+  if(d.volR>1.5) lines.push(`거래량 ${d.volR.toFixed(1)}x → 높은 참여도.`);
+  else if(d.volR<0.5) lines.push(`거래량 ${d.volR.toFixed(1)}x → 저조. 지속성 의문.`);
+  if(Math.abs(d.pE60)>2) lines.push(`EMA60 대비 ${d.pE60>0?"+":""}${d.pE60.toFixed(1)}% 이탈.`);
+  return{bias,lines};
 }
 
 // ═══════════════════════════════════════════════════════════
 // RENDER
 // ═══════════════════════════════════════════════════════════
 function fP(p){if(p>=1000)return"$"+p.toLocaleString("en",{minimumFractionDigits:2,maximumFractionDigits:2});if(p>=1)return"$"+p.toFixed(2);if(p>=0.001)return"$"+p.toFixed(4);return"$"+p.toFixed(8);}
-
-function renderInterp(elId,data){
-  const el=document.getElementById(elId);
-  const biasLabel=data.bias==="long"?"BULLISH":data.bias==="short"?"BEARISH":"NEUTRAL";
-  el.innerHTML=`<div class="interp-label">해석</div><span class="interp-bias ${data.bias}">${biasLabel}</span><div class="interp-body">${data.lines.join(" ")}</div>`;
-}
+function rInterp(id,data){const el=document.getElementById(id);const bl=data.bias==="long"?"BULLISH":data.bias==="short"?"BEARISH":"NEUTRAL";el.innerHTML=`<div class="interp-label">해석</div><span class="interp-bias ${data.bias}">${bl}</span><div class="interp-body">${data.lines.join(" ")}</div>`;}
 
 function renderStrip(){
   const el=document.getElementById("strip");el.innerHTML="";
-  COINS.forEach((c,i)=>{
-    const d=DB[i][ST];const ch=d.chg;
-    const div=document.createElement("div");
-    div.className="coin-chip"+(i===SC?" active":"");
-    div.innerHTML=`<span class="chip-sym">${c.s}</span><span class="chip-pct" style="color:${ch>=0?"var(--green)":"var(--red)"}">${ch>=0?"+":""}${ch.toFixed(1)}%</span>`;
-    div.onclick=()=>{SC=i;renderAll();};
-    el.appendChild(div);
-  });
+  COINS.forEach((c,i)=>{const d=DB[i][ST];const ch=d.chg;const div=document.createElement("div");div.className="coin-chip"+(i===SC?" active":"");div.innerHTML=`<span class="chip-sym">${c.s}</span><span class="chip-pct" style="color:${ch>=0?"var(--green)":"var(--red)"}">${ch>=0?"+":""}${ch.toFixed(1)}%</span>`;div.onclick=()=>{SC=i;renderAll();};el.appendChild(div);});
   const a=el.querySelector(".active");if(a)a.scrollIntoView({behavior:"smooth",block:"nearest",inline:"center"});
 }
-
 function renderSB(){
   const el=document.getElementById("sblist");el.innerHTML="";
-  COINS.forEach((c,i)=>{
-    const d=DB[i][ST];const ch=d.chg;
-    const div=document.createElement("div");
-    div.className="sb-item"+(i===SC?" active":"");
-    div.innerHTML=`<span class="sb-rank">${i+1}</span><div class="sb-info"><span class="sb-sym">${c.s}</span><span class="sb-name">${c.n}</span></div><span class="sb-pct" style="color:${ch>=0?"var(--green)":"var(--red)"}">${ch>=0?"+":""}${ch.toFixed(2)}%</span>`;
-    div.onclick=()=>{SC=i;renderAll();};
-    el.appendChild(div);
-  });
+  COINS.forEach((c,i)=>{const d=DB[i][ST];const ch=d.chg;const div=document.createElement("div");div.className="sb-item"+(i===SC?" active":"");div.innerHTML=`<span class="sb-rank">${i+1}</span><div class="sb-info"><span class="sb-sym">${c.s}</span><span class="sb-name">${c.n}</span></div><span class="sb-pct" style="color:${ch>=0?"var(--green)":"var(--red)"}">${ch>=0?"+":""}${ch.toFixed(2)}%</span>`;div.onclick=()=>{SC=i;renderAll();};el.appendChild(div);});
 }
-
 function renderHdr(){
   const c=COINS[SC],d=DB[SC][ST];
   document.getElementById("hc").textContent=c.s+"USDT";
@@ -457,6 +483,13 @@ function renderHdr(){
   document.getElementById("ctf").textContent=ST.toUpperCase();
 }
 
+function drawLine(ctx,data,startIdx,toX,toY,color,width,dash){
+  ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.globalAlpha=dash?0.5:0.7;
+  if(dash)ctx.setLineDash([4,3]);
+  for(let i=startIdx;i<data.length;i++){const x=toX(i-startIdx),y=toY(data[i]);(i===startIdx)?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+  ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+}
+
 function renderChart(){
   const canvas=document.getElementById("cMain");
   const dpr=window.devicePixelRatio||1;
@@ -465,88 +498,236 @@ function renderChart(){
   canvas.style.height=H+"px";canvas.width=W*dpr;canvas.height=H*dpr;
   const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
 
-  const d=DB[SC][ST],oh=d.oh;
+  const d=DB[SC][ST];
+  const viewN=120;
+  const startIdx=Math.max(0,d.oh.length-viewN);
+  const oh=d.oh.slice(startIdx);
   const pad={l:2,r:48,t:4,b:4};
   const cW=W-pad.l-pad.r,cH=H-pad.t-pad.b;
   let aV=[];oh.forEach(c=>{aV.push(c.h,c.l);});
-  [9,21,50,100,200].forEach(p=>{d.emas[p].forEach(v=>aV.push(v));d.rvs[p].forEach(v=>aV.push(v));});
+  PERIODS.forEach(p=>{for(let i=startIdx;i<d.emas[p].length;i++){aV.push(d.emas[p][i]);aV.push(d.rvs[p][i]);}});
   const yMn=Math.min(...aV)*0.999,yMx=Math.max(...aV)*1.001,yR=yMx-yMn||1;
   const tX=i=>pad.l+(i/(oh.length-1))*cW;
   const tY=v=>pad.t+((yMx-v)/yR)*cH;
   const bW=Math.max(1,cW/oh.length*0.6);
 
   ctx.strokeStyle="rgba(42,38,24,0.35)";ctx.lineWidth=0.5;
-  for(let i=0;i<5;i++){
-    const y=pad.t+(cH/4)*i;
-    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
-    const val=yMx-(yR/4)*i;
-    ctx.fillStyle="#6B6040";ctx.font="8px JetBrains Mono";
-    ctx.fillText(val>=1?val.toFixed(1):val.toFixed(5),W-pad.r+3,y+3);
-  }
+  for(let i=0;i<5;i++){const y=pad.t+(cH/4)*i;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();const val=yMx-(yR/4)*i;ctx.fillStyle="#6B6040";ctx.font="8px JetBrains Mono";ctx.fillText(val>=1?val.toFixed(1):val.toFixed(5),W-pad.r+3,y+3);}
 
-  const eC={9:"#FFD700",21:"#FF8C00",50:"#FF4500",100:"#DC143C",200:"#8B0000"};
-  [200,100,50,21,9].forEach(p=>{
-    ctx.beginPath();ctx.strokeStyle=eC[p];ctx.lineWidth=p===200?1.5:1;ctx.globalAlpha=0.7;
-    d.emas[p].forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  const eC={10:"#FFD700",20:"#FF8C00",60:"#FF4500",120:"#DC143C",200:"#8B0000",350:"#5C0000"};
+  const rC={10:"#00BFFF",20:"#1E90FF",60:"#4169E1",120:"#0000CD",200:"#4B0082",350:"#2E0854"};
+
+  [...PERIODS].reverse().forEach(p=>{
+    const data=d.emas[p].slice(startIdx);
+    ctx.beginPath();ctx.strokeStyle=eC[p];ctx.lineWidth=p>=200?1.5:1;ctx.globalAlpha=0.7;
+    data.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
     ctx.stroke();ctx.globalAlpha=1;
   });
-
-  const rC={9:"#00BFFF",21:"#1E90FF",50:"#4169E1",100:"#0000CD",200:"#4B0082"};
-  [200,100,50,21,9].forEach(p=>{
-    ctx.beginPath();ctx.strokeStyle=rC[p];ctx.lineWidth=p===200?1.5:1;ctx.globalAlpha=0.5;
-    ctx.setLineDash([4,3]);
-    d.rvs[p].forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  [...PERIODS].reverse().forEach(p=>{
+    const data=d.rvs[p].slice(startIdx);
+    ctx.beginPath();ctx.strokeStyle=rC[p];ctx.lineWidth=p>=200?1.5:1;ctx.globalAlpha=0.5;ctx.setLineDash([4,3]);
+    data.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
     ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
   });
 
-  oh.forEach((c,i)=>{
-    const x=tX(i);const up=c.c>=c.o;
-    ctx.fillStyle=up?"rgba(200,168,78,0.9)":"rgba(107,76,42,0.9)";
-    ctx.strokeStyle=up?"#C8A84E":"#6B4C2A";ctx.lineWidth=0.8;
-    ctx.beginPath();ctx.moveTo(x,tY(c.h));ctx.lineTo(x,tY(c.l));ctx.stroke();
-    const bt=tY(Math.max(c.o,c.c)),bb=tY(Math.min(c.o,c.c));
-    ctx.fillRect(x-bW/2,bt,bW,Math.max(1,bb-bt));
-  });
+  oh.forEach((c,i)=>{const x=tX(i);const up=c.c>=c.o;ctx.strokeStyle=up?"#EEEEE8":"#E85454";ctx.lineWidth=0.8;ctx.beginPath();ctx.moveTo(x,tY(c.h));ctx.lineTo(x,tY(c.l));ctx.stroke();const bt=tY(Math.max(c.o,c.c)),bb=tY(Math.min(c.o,c.c));if(up){ctx.strokeStyle="#EEEEE8";ctx.strokeRect(x-bW/2,bt,bW,Math.max(1,bb-bt));}else{ctx.fillStyle="#E85454";ctx.fillRect(x-bW/2,bt,bW,Math.max(1,bb-bt));}});
 
   const lg=document.getElementById("lgBox");lg.innerHTML="";
   Object.entries(eC).forEach(([p,c])=>{lg.innerHTML+=`<div class="legend-item"><span class="lg-line" style="background:${c}"></span>E${p}</div>`;});
   Object.entries(rC).forEach(([p,c])=>{lg.innerHTML+=`<div class="legend-item"><span class="lg-dash" style="border-color:${c}"></span>RV${p}</div>`;});
 
-  const vC=document.getElementById("cVol");const vH=36;
-  vC.style.height=vH+"px";vC.width=W*dpr;vC.height=vH*dpr;
+  const vC=document.getElementById("cVol");const vH=36;vC.style.height=vH+"px";vC.width=W*dpr;vC.height=vH*dpr;
   const vx=vC.getContext("2d");vx.scale(dpr,dpr);vx.clearRect(0,0,W,vH);
   const mV=Math.max(...oh.map(c=>c.v));
-  oh.forEach((c,i)=>{
-    const x=tX(i);const h=(c.v/mV)*28;const up=c.c>=c.o;
-    vx.fillStyle=up?"rgba(200,168,78,0.3)":"rgba(107,76,42,0.3)";
-    vx.fillRect(x-bW/2,vH-h-2,bW,h);
-  });
+  oh.forEach((c,i)=>{const x=tX(i);const h=(c.v/mV)*28;const up=c.c>=c.o;vx.fillStyle=up?"rgba(38,166,91,0.55)":"rgba(232,84,84,0.55)";vx.fillRect(x-bW/2,vH-h-2,bW,h);});
   vx.fillStyle="#3A3520";vx.font="7px JetBrains Mono";vx.fillText("VOL",3,9);
 
-  // Chart interpretation
-  renderInterp("interp-chart",interpChart(d,COINS[SC].s));
+  rInterp("interp-chart",interpChart(d));
+}
+
+// ─── CS1 Chart: CONFLUENCE SNIPER OVERLAY — Candles + RVWAP + BB + KC + Squeeze + Mini Dashboard ───
+function renderCS1Chart(){
+  const canvas=document.getElementById("cs1Canvas");
+  const rect=canvas.parentElement.getBoundingClientRect();
+  const dpr=window.devicePixelRatio||1;
+  const W=rect.width,H=320;
+  canvas.style.height=H+"px";canvas.width=W*dpr;canvas.height=H*dpr;
+  const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+
+  const d=DB[SC][ST];
+  const viewN=120;const startIdx=Math.max(0,d.oh.length-viewN);
+  const oh=d.oh.slice(startIdx);
+  const n=oh.length;
+
+  const dashH=22,sqDotH=10,volH2=28;
+  const pad={l:2,r:48,t:4,b:dashH+sqDotH+volH2+8};
+  const cW=W-pad.l-pad.r,cH=H-pad.t-pad.b;
+
+  let aV=[];
+  oh.forEach(c=>{aV.push(c.h,c.l);});
+  for(let i=startIdx;i<d.bb.upper.length;i++){aV.push(d.bb.upper[i],d.bb.lower[i]);}
+  for(let i=startIdx;i<d.kc.upper.length;i++){aV.push(d.kc.upper[i],d.kc.lower[i]);}
+  [10,20].forEach(p=>{for(let i=startIdx;i<d.rvs[p].length;i++)aV.push(d.rvs[p][i]);});
+  const yMn=Math.min(...aV)*0.998,yMx=Math.max(...aV)*1.002,yR=yMx-yMn||1;
+  const tX=i=>pad.l+(i/(n-1))*cW;
+  const tY=v=>pad.t+((yMx-v)/yR)*cH;
+  const bW=Math.max(1.5,cW/n*0.6);
+
+  ctx.strokeStyle="rgba(42,38,24,0.3)";ctx.lineWidth=0.5;
+  for(let i=0;i<5;i++){const y=pad.t+(cH/4)*i;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();const val=yMx-(yR/4)*i;ctx.fillStyle="#6B6040";ctx.font="7px JetBrains Mono";ctx.fillText(val>=1?val.toFixed(1):val.toFixed(5),W-pad.r+3,y+3);}
+
+  // Squeeze background
+  const sqzSlice=d.sqz.slice(startIdx);
+  sqzSlice.forEach((sq,i)=>{if(sq){ctx.fillStyle="rgba(123,0,0,0.07)";ctx.fillRect(tX(i)-cW/n/2,pad.t,cW/n,cH);}});
+
+  // KC band fill + lines
+  const kcU=d.kc.upper.slice(startIdx),kcL=d.kc.lower.slice(startIdx);
+  ctx.beginPath();kcU.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  for(let i=n-1;i>=0;i--)ctx.lineTo(tX(i),tY(kcL[i]));
+  ctx.closePath();ctx.fillStyle="rgba(220,20,60,0.03)";ctx.fill();
+  ctx.globalAlpha=0.35;ctx.setLineDash([2,4]);ctx.strokeStyle="#DC143C";ctx.lineWidth=1;
+  ctx.beginPath();kcU.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();
+  ctx.beginPath();kcL.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();
+  ctx.setLineDash([]);ctx.globalAlpha=1;
+
+  // BB band fill + lines
+  const bbU=d.bb.upper.slice(startIdx),bbL=d.bb.lower.slice(startIdx),bbM=d.bb.mid.slice(startIdx);
+  ctx.beginPath();bbU.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  for(let i=n-1;i>=0;i--)ctx.lineTo(tX(i),tY(bbL[i]));
+  ctx.closePath();ctx.fillStyle="rgba(168,123,210,0.05)";ctx.fill();
+  ctx.globalAlpha=0.45;ctx.setLineDash([3,3]);ctx.strokeStyle="#A87BD2";ctx.lineWidth=1;
+  ctx.beginPath();bbU.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();
+  ctx.beginPath();bbL.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();
+  ctx.setLineDash([]);ctx.strokeStyle="#A87BD2";ctx.lineWidth=0.6;
+  ctx.beginPath();bbM.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();
+  ctx.globalAlpha=1;
+
+  // RVWAP overlay lines
+  const rvC2={10:"#00BFFF",20:"#1E90FF"};
+  [20,10].forEach(p=>{const data=d.rvs[p].slice(startIdx);ctx.beginPath();ctx.strokeStyle=rvC2[p];ctx.lineWidth=1.5;ctx.globalAlpha=0.75;data.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();ctx.globalAlpha=1;});
+
+  // Candles
+  oh.forEach((c,i)=>{const x=tX(i);const up=c.c>=c.o;ctx.strokeStyle=up?"#EEEEE8":"#E85454";ctx.lineWidth=0.7;ctx.beginPath();ctx.moveTo(x,tY(c.h));ctx.lineTo(x,tY(c.l));ctx.stroke();const bt=tY(Math.max(c.o,c.c)),bb2=tY(Math.min(c.o,c.c));if(up){ctx.strokeStyle="#EEEEE8";ctx.strokeRect(x-bW/2,bt,bW,Math.max(1,bb2-bt));}else{ctx.fillStyle="#E85454";ctx.fillRect(x-bW/2,bt,bW,Math.max(1,bb2-bt));}});
+
+  // Squeeze dots
+  const sqY=H-dashH-volH2-sqDotH;
+  sqzSlice.forEach((sq,i)=>{ctx.fillStyle=sq?"#E85454":"#26A65B";ctx.beginPath();ctx.arc(tX(i),sqY+sqDotH/2,2,0,Math.PI*2);ctx.fill();});
+
+  // Mini 7-factor dashboard
+  const dashY=H-volH2-dashH;
+  const labels=["RVT","RVR","VRI","VMD","TTM","MFI","OBV","Σ"];
+  const scores=d.factors.map(f=>f.score);
+  const cellW=Math.min(36,(cW-4)/8);
+  const startX2=pad.l+(cW-cellW*8)/2;
+  scores.concat([d.lc-d.sc]).forEach((sc,i)=>{
+    const x=startX2+i*cellW;const isT=i===7;
+    ctx.fillStyle=sc>0?"rgba(38,166,91,"+(isT?"0.15":"0.1")+")":sc<0?"rgba(232,84,84,"+(isT?"0.15":"0.1")+")":"rgba(42,38,24,0.3)";
+    ctx.fillRect(x,dashY,cellW-1,dashH);
+    ctx.strokeStyle="rgba(42,38,24,0.5)";ctx.lineWidth=0.5;ctx.strokeRect(x,dashY,cellW-1,dashH);
+    ctx.fillStyle="#8A8060";ctx.font="6px JetBrains Mono";ctx.textAlign="center";
+    ctx.fillText(labels[i],x+cellW/2-0.5,dashY+8);
+    ctx.fillStyle=sc>0?"#26A65B":sc<0?"#E85454":"#6B6040";
+    ctx.font=isT?"bold 9px JetBrains Mono":"8px JetBrains Mono";
+    ctx.fillText(isT?String(sc):(sc>0?"1":sc<0?"-1":"0"),x+cellW/2-0.5,dashY+18);
+    ctx.textAlign="start";
+  });
+
+  // Volume
+  const mV=Math.max(...oh.map(c=>c.v));
+  oh.forEach((c,i)=>{const x=tX(i);const h=(c.v/mV)*(volH2-4);const up=c.c>=c.o;ctx.fillStyle=up?"rgba(38,166,91,0.4)":"rgba(232,84,84,0.4)";ctx.fillRect(x-bW/2,H-2-h,bW,h);});
+
+  const lg=document.getElementById("cs1Lg");
+  lg.innerHTML=`<div class="legend-item"><span class="lg-line" style="background:#00BFFF"></span>RV10</div><div class="legend-item"><span class="lg-line" style="background:#1E90FF"></span>RV20</div><div class="legend-item"><span class="lg-dash" style="border-color:#A87BD2"></span>BB</div><div class="legend-item"><span class="lg-dash" style="border-color:#DC143C"></span>KC</div><div class="legend-item"><span style="width:5px;height:5px;border-radius:50%;background:#E85454;display:inline-block"></span>SQZ</div>`;
+}
+
+// ─── CS2 Indicator Chart: EMA slopes + OBV ───
+function renderCS2Chart(){
+  const canvas=document.getElementById("cs2Canvas");
+  const rect=canvas.parentElement.getBoundingClientRect();
+  const dpr=window.devicePixelRatio||1;
+  const W=rect.width,H=200;
+  canvas.style.height=H+"px";canvas.width=W*dpr;canvas.height=H*dpr;
+  const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+
+  const d=DB[SC][ST];
+  const viewN=120;const startIdx=Math.max(0,d.cl.length-viewN);
+  const obvD=d.obvSeries.slice(startIdx);
+  const obvE=d.obvEma.slice(startIdx);
+  const n=obvD.length;
+
+  // Compute rolling EMA10 slope
+  const ema10=d.emas[10].slice(startIdx);
+  const slopes=ema10.map((v,i)=>i<3?0:(v-ema10[i-3])/ema10[i-3]*100);
+
+  const pad={l:2,r:36,t:4,b:4};
+  const cW=W-pad.l-pad.r;
+  const tX=i=>pad.l+(i/(n-1))*cW;
+
+  // Top: EMA slope histogram
+  const topH=H*0.45;
+  const maxSlope=Math.max(...slopes.map(v=>Math.abs(v)))||1;
+  const midY1=pad.t+topH/2;
+  ctx.strokeStyle="rgba(42,38,24,0.4)";ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(pad.l,midY1);ctx.lineTo(W-pad.r,midY1);ctx.stroke();
+  ctx.fillStyle="#6B6040";ctx.font="7px JetBrains Mono";ctx.fillText("0",W-pad.r+2,midY1+3);
+
+  const barW3=Math.max(1,cW/n*0.7);
+  slopes.forEach((v,i)=>{
+    const x=tX(i);const h=(Math.abs(v)/maxSlope)*(topH/2-4);
+    ctx.fillStyle=v>=0?"rgba(255,215,0,0.5)":"rgba(232,115,74,0.5)";
+    if(v>=0)ctx.fillRect(x-barW3/2,midY1-h,barW3,h);
+    else ctx.fillRect(x-barW3/2,midY1,barW3,h);
+  });
+
+  // Bottom: OBV + OBV EMA
+  const botTop=topH+12;const botH=H-botTop-pad.b;
+  const allObv=[...obvD,...obvE];
+  const oMin=Math.min(...allObv),oMax=Math.max(...allObv),oR=oMax-oMin||1;
+  const tYo=v=>botTop+((oMax-v)/oR)*(botH-4);
+
+  ctx.strokeStyle="rgba(42,38,24,0.3)";ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(pad.l,botTop);ctx.lineTo(W-pad.r,botTop);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pad.l,botTop+botH);ctx.lineTo(W-pad.r,botTop+botH);ctx.stroke();
+
+  // OBV area fill
+  ctx.beginPath();ctx.moveTo(tX(0),tYo(obvD[0]));
+  obvD.forEach((v,i)=>{ctx.lineTo(tX(i),tYo(v));});
+  ctx.lineTo(tX(n-1),botTop+botH);ctx.lineTo(tX(0),botTop+botH);ctx.closePath();
+  ctx.fillStyle="rgba(107,157,210,0.1)";ctx.fill();
+
+  ctx.beginPath();ctx.strokeStyle="#6B9BD2";ctx.lineWidth=1.5;
+  obvD.forEach((v,i)=>{const x=tX(i),y=tYo(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();
+  ctx.beginPath();ctx.strokeStyle="#E8734A";ctx.lineWidth=1;ctx.setLineDash([3,2]);
+  obvE.forEach((v,i)=>{const x=tX(i),y=tYo(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();ctx.setLineDash([]);
+
+  const lg=document.getElementById("cs2Lg");
+  lg.innerHTML=`<div class="legend-item"><span class="lg-line" style="background:#FFD700"></span>EMA10 Slope</div><div class="legend-item"><span class="lg-line" style="background:#6B9BD2"></span>OBV</div><div class="legend-item"><span class="lg-dash" style="border-color:#E8734A"></span>OBV EMA20</div>`;
 }
 
 function renderCS1(){
   const d=DB[SC][ST];
+  // Dashboard view
   const g=document.getElementById("cs1g");g.innerHTML="";
   d.factors.forEach(f=>{
     const col=f.score>0?"var(--green)":f.score<0?"var(--red)":"var(--text-dim)";
     const icon=f.score>0?"▲":f.score<0?"▼":"─";
-    const bc=f.score>0?"var(--green)":f.score<0?"var(--red)":"var(--text-dim)";
-    g.innerHTML+=`<div class="cs-cell"><div class="cs-lbl">${f.label}</div><div class="cs-arr" style="color:${col}">${icon}</div><div class="cs-raw">${f.raw}</div><div class="cs-bar"><div class="cs-bar-f" style="width:${f.score!==0?100:30}%;background:${bc};opacity:0.4"></div></div></div>`;
+    g.innerHTML+=`<div class="cs-cell" data-factor="${f.label}"><div class="cs-lbl">${f.label}</div><div class="cs-arr" style="color:${col}">${icon}</div><div class="cs-raw">${f.raw}</div><div class="cs-bar"><div class="cs-bar-f" style="width:${f.score!==0?100:30}%;background:${col};opacity:0.4"></div></div></div>`;
   });
+  // attach click handlers
+  g.querySelectorAll(".cs-cell").forEach(cell=>{cell.addEventListener("click",e=>{showFactorTip(cell.dataset.factor,cell);});});
 
-  const t=document.getElementById("cs1t");
-  t.textContent=`L${d.lc}/S${d.sc}`;
-  t.style.color=d.lc>=5?"var(--green)":d.sc>=5?"var(--red)":"var(--gold)";
-
+  const t=document.getElementById("cs1t");t.textContent=`L${d.lc}/S${d.sc}`;t.style.color=d.lc>=5?"var(--green)":d.sc>=5?"var(--red)":"var(--gold)";
   const s=document.getElementById("cs1s");
   if(d.lc>=5) s.innerHTML=`<span class="sig-lbl">SIGNAL</span><span class="sig-val s-l">◆ LONG (${d.lc}/7)</span>`;
   else if(d.sc>=5) s.innerHTML=`<span class="sig-lbl">SIGNAL</span><span class="sig-val s-s">◆ SHORT (${d.sc}/7)</span>`;
   else s.innerHTML=`<span class="sig-lbl">SIGNAL</span><span class="sig-val s-n">─ NO CONFLUENCE</span>`;
 
-  renderInterp("interp-cs1",interpCS1(d,COINS[SC].s));
+  // Toggle visibility
+  document.getElementById("cs1-dash").style.display=cs1View==="dash"?"block":"none";
+  document.getElementById("cs1-chart").style.display=cs1View==="chart"?"block":"none";
+  if(cs1View==="chart") renderCS1Chart();
+
+  rInterp("interp-cs1",interpCS1(d));
 }
 
 function renderCS2(){
@@ -556,32 +737,63 @@ function renderCS2(){
     const nv=Math.min(100,Math.abs(f.value/f.max)*100);
     const col=f.score>0?"var(--green)":f.score<0?"var(--red)":"var(--text-dim)";
     const dv=typeof f.value==="number"?f.value.toFixed(2):f.value;
-    c.innerHTML+=`<div class="c2-row"><span class="c2-lbl">${f.label}</span><div class="c2-bg"><div class="c2-fill" style="width:${nv}%;background:${col};opacity:0.5"></div></div><span class="c2-val" style="color:${col}">${dv}</span></div>`;
+    c.innerHTML+=`<div class="c2-row" data-factor="${f.label}"><span class="c2-lbl">${f.label}</span><div class="c2-bg"><div class="c2-fill" style="width:${nv}%;background:${col};opacity:0.5"></div></div><span class="c2-val" style="color:${col}">${dv}</span></div>`;
   });
+  c.querySelectorAll(".c2-row").forEach(row=>{row.addEventListener("click",e=>{showFactorTip(row.dataset.factor,row);});});
 
-  const t=document.getElementById("cs2t");
-  t.textContent=`L${d.c2l}/S${d.c2s}`;
-  t.style.color=d.c2l>=5?"var(--green)":d.c2s>=5?"var(--red)":"var(--gold)";
-
+  const t=document.getElementById("cs2t");t.textContent=`L${d.c2l}/S${d.c2s}`;t.style.color=d.c2l>=5?"var(--green)":d.c2s>=5?"var(--red)":"var(--gold)";
   const s=document.getElementById("cs2s");
   if(d.c2l>=5) s.innerHTML=`<span class="sig-lbl">MOM</span><span class="sig-val s-l">◆ LONG (${d.c2l}/7)</span>`;
   else if(d.c2s>=5) s.innerHTML=`<span class="sig-lbl">MOM</span><span class="sig-val s-s">◆ SHORT (${d.c2s}/7)</span>`;
   else s.innerHTML=`<span class="sig-lbl">MOM</span><span class="sig-val s-n">─ MIXED</span>`;
 
-  renderInterp("interp-cs2",interpCS2(d,COINS[SC].s));
+  document.getElementById("cs2-dash").style.display=cs2View==="dash"?"block":"none";
+  document.getElementById("cs2-chart").style.display=cs2View==="chart"?"block":"none";
+  if(cs2View==="chart") renderCS2Chart();
+
+  rInterp("interp-cs2",interpCS2(d));
 }
+
+// ─── Factor Tooltip ───
+function showFactorTip(key,el){
+  const info=FACTOR_INFO[key];
+  if(!info)return;
+  const tip=document.getElementById("factorTip");
+  const bg=document.getElementById("tipBg");
+  document.getElementById("ftName").textContent=info.name;
+  document.getElementById("ftDesc").textContent=info.desc;
+  document.getElementById("ftHow").innerHTML=info.how;
+
+  // Position near center on mobile
+  tip.style.left="50%";tip.style.transform="translateX(-50%)";
+  tip.style.top=Math.min(window.innerHeight*0.3,200)+"px";
+
+  tip.classList.add("show");bg.classList.add("show");
+}
+function closeTip(){document.getElementById("factorTip").classList.remove("show");document.getElementById("tipBg").classList.remove("show");}
+document.getElementById("ftClose").addEventListener("click",closeTip);
+document.getElementById("tipBg").addEventListener("click",closeTip);
 
 function renderAll(){renderStrip();renderSB();renderHdr();renderChart();renderCS1();renderCS2();}
 
-document.querySelectorAll(".tf-tab").forEach(b=>{
-  b.addEventListener("click",()=>{
-    document.querySelectorAll(".tf-tab").forEach(x=>x.classList.remove("active"));
-    b.classList.add("active");ST=b.dataset.tf;renderAll();
+// View toggle
+document.querySelectorAll(".vt-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    const panel=btn.dataset.panel,view=btn.dataset.view;
+    btn.parentElement.querySelectorAll(".vt-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    if(panel==="cs1"){cs1View=view;renderCS1();}
+    else{cs2View=view;renderCS2();}
   });
 });
 
-let rt;window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(renderChart,80);});
+document.querySelectorAll(".tf-tab").forEach(b=>{
+  b.addEventListener("click",()=>{document.querySelectorAll(".tf-tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");ST=b.dataset.tf;renderAll();});
+});
+
+let rt;window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{renderChart();if(cs1View==="chart")renderCS1Chart();if(cs2View==="chart")renderCS2Chart();},80);});
 renderAll();
 </script>
+
 </body>
 </html>
