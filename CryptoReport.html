@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRYPTO REPORT</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0a0b0f; color:#e8e6e3; font-family:'IBM Plex Sans',sans-serif; padding-bottom:40px; }
+header { padding:14px 16px; border-bottom:1px solid #1e2028; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:rgba(10,11,15,0.95); z-index:10; gap:8px; }
+.logo { font-size:15px; font-weight:800; font-family:'JetBrains Mono',monospace; letter-spacing:-1px; white-space:nowrap; }
+.logo-dot { color:#00ffa3; }
+.ts { font-size:10px; color:#6b7080; background:#1e2028; padding:2px 8px; border-radius:10px; }
+.hright { display:flex; gap:4px; align-items:center; flex-shrink:0; }
+.tabs { display:flex; background:#13141a; border-radius:8px; border:1px solid #1e2028; overflow:hidden; }
+.tab { padding:6px 14px; border:none; cursor:pointer; font-size:12px; font-weight:600; background:transparent; color:#6b7080; font-family:'IBM Plex Sans',sans-serif; }
+.tab.on { background:#1e2028; color:#00ffa3; }
+.btn-refresh { padding:6px 12px; border:1px solid rgba(0,255,163,0.25); border-radius:8px; background:rgba(0,255,163,0.06); color:#00ffa3; font-size:11px; font-weight:600; cursor:pointer; font-family:'IBM Plex Sans',sans-serif; }
+#main { max-width:720px; margin:0 auto; padding:14px 16px; display:flex; flex-direction:column; gap:14px; }
+.card { background:#13141a; border:1px solid #1e2028; border-radius:10px; padding:14px 16px; }
+.card-hd { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.card-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; }
+.bdg { font-size:10px; color:#8a8f98; background:#1e2028; padding:2px 8px; border-radius:10px; }
+.tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; margin-right:4px; margin-bottom:2px; }
+.narrative { font-size:13px; color:#c9cdd4; line-height:1.6; margin-top:4px; }
+.pgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); gap:8px; }
+.pcard { background:#13141a; border:1px solid #1e2028; border-radius:10px; padding:12px 14px; }
+.pcard-top { display:flex; justify-content:space-between; align-items:center; }
+.pcard-sym { font-size:14px; font-weight:700; }
+.pcard-price { font-size:20px; font-weight:800; font-family:'JetBrains Mono',monospace; margin:6px 0 2px; }
+.pcard-chg { font-size:13px; font-weight:600; font-family:'JetBrains Mono',monospace; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.tbl-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+th { padding:6px 8px; color:#6b7080; font-weight:600; border-bottom:1px solid #1e2028; font-size:10px; text-transform:uppercase; letter-spacing:.5px; text-align:left; white-space:nowrap; }
+th.r, td.r { text-align:right; font-family:'JetBrains Mono',monospace; }
+td { padding:7px 8px; color:#c9cdd4; font-size:12px; }
+tr { border-bottom:1px solid rgba(30,32,40,0.5); }
+.ibox { margin-top:10px; padding:10px 12px; background:#0d1117; border-left:3px solid #ffaa00; border-radius:0 6px 6px 0; font-size:12px; color:#c9cdd4; line-height:1.6; }
+.cbox { margin-top:8px; padding:8px 12px; background:#1a0a0a; border-left:3px solid #ff4466; border-radius:0 6px 6px 0; font-size:12px; color:#ff8899; line-height:1.6; }
+.gauge-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.gauge-num { font-size:28px; font-weight:800; font-family:'JetBrains Mono',monospace; }
+.gauge-lbl { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; }
+.gauge-str { font-size:10px; color:#8a8f98; }
+.alert-row { padding:8px 0; border-bottom:1px solid #1e2028; display:flex; gap:8px; align-items:flex-start; }
+.alert-row:last-child { border-bottom:none; }
+.alert-ev { font-size:12px; color:#e8e6e3; font-weight:600; }
+.alert-rs { font-size:11px; color:#8a8f98; margin-top:2px; }
+.liq-blk { margin-bottom:10px; }
+.liq-sym { font-size:13px; font-weight:700; margin-bottom:4px; }
+.liq-chips { display:flex; gap:6px; flex-wrap:wrap; }
+.chip-long { background:rgba(255,68,102,0.1); color:#ff4466; padding:2px 8px; border-radius:4px; font-size:11px; }
+.chip-short { background:rgba(0,255,163,0.1); color:#00ffa3; padding:2px 8px; border-radius:4px; font-size:11px; }
+.flow-row { padding:6px 0; border-bottom:1px solid #1e2028; }
+.flow-row:last-child { border-bottom:none; }
+.flow-top { display:flex; justify-content:space-between; align-items:center; }
+.flow-sym { font-weight:700; font-size:13px; }
+.flow-amt { font-size:12px; font-weight:600; font-family:'JetBrains Mono',monospace; }
+.flow-sub { font-size:10px; color:#8a8f98; margin-top:2px; }
+.struct-grid { display:flex; gap:6px; flex-wrap:wrap; }
+.struct-item { flex:1; min-width:80px; background:#0d1117; border-radius:6px; padding:8px 10px; text-align:center; }
+.struct-lbl { font-size:10px; color:#6b7080; margin-bottom:4px; }
+.struct-val { font-size:12px; font-weight:700; font-family:'JetBrains Mono',monospace; }
+.struct-chg { font-size:11px; font-weight:600; }
+.rem-row { padding:8px 0; border-bottom:1px solid #1e2028; display:flex; gap:8px; }
+.rem-row:last-child { border-bottom:none; }
+.rem-num { color:#ffaa00; font-weight:800; font-size:16px; line-height:1.4; flex-shrink:0; }
+.rem-txt { font-size:12px; color:#c9cdd4; line-height:1.5; }
+.scen-row { padding:10px 0; border-bottom:1px solid #1e2028; }
+.scen-row:last-child { border-bottom:none; }
+.scen-sym { font-size:14px; font-weight:700; margin-bottom:6px; }
+.scen-cols { display:flex; gap:6px; margin-bottom:4px; }
+.bull-box { flex:1; background:rgba(0,255,163,0.04); border:1px solid rgba(0,255,163,0.12); border-radius:6px; padding:6px 10px; font-size:11px; color:#00ffa3; }
+.bear-box { flex:1; background:rgba(255,68,102,0.04); border:1px solid rgba(255,68,102,0.12); border-radius:6px; padding:6px 10px; font-size:11px; color:#ff4466; }
+.box-ttl { font-weight:700; margin-bottom:2px; }
+.key-lv { font-size:10px; color:#8a8f98; }
+.footer { text-align:center; margin-top:20px; font-size:10px; color:#4a4f5a; }
+.sig-inline { font-size:12px; font-weight:700; font-family:'JetBrains Mono',monospace; }
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+    <div class="logo"><span class="logo-dot">◆</span> CRYPTO REPORT</div>
+    <div class="ts" id="ts">--</div>
+  </div>
+  <div class="hright">
+    <div class="tabs">
+      <button class="tab on" id="tab-daily" onclick="switchMode('daily')">데일리</button>
+      <button class="tab" id="tab-weekly" onclick="switchMode('weekly')">주간</button>
+    </div>
+    <button class="btn-refresh" id="btnR" onclick="fetchReport()">🔄 새로고침</button>
+  </div>
+</header>
+<div id="main"></div>
+
+<script>
+var DAILY = {
+  date: "2026-03-16",
+  narrative: { tags: ["#숏스퀴즈", "#기관매집"], summary: "BTC 네거티브 펀딩 상태에서 스팟 ETF $767M 유입이 숏 청산을 촉발. ETH는 고래 매집 + ETF 유입이 동시에 겹치면서 알트 반등을 주도." },
+  prices: [
+    { symbol: "BTC", price: 73795, change: 3.2 },
+    { symbol: "ETH", price: 2264, change: 7.5 },
+    { symbol: "SOL", price: 93.66, change: 1.5 },
+    { symbol: "XAUT", price: 4971, change: 0.1 }
+  ],
+  metrics: { totalMcap: "2.52T", btcD: 56.9, fng: 15, fngLabel: "Extreme Fear", fngStreak: 38, funding: -0.010, oi: "687,200 BTC", oiChange: 5, totalOI: "$107.6B", totalOIChange: 5 },
+  tradfi: [
+    { label: "S&P 500", price: "6,632", change: -0.61 },
+    { label: "QQQ", price: "593.72", change: -0.59 },
+    { label: "TSLA", price: "391.20", change: -0.96 },
+    { label: "KOSPI", price: "5,550", change: 1.14 },
+    { label: "Oil", price: "$104", change: 2.1 }
+  ],
+  signals: [
+    { symbol: "ETH", signal: "LONG", priority: 3, tags: "고래매집 + ETF유입 + OI신고 + 풋소멸", interpretation: "4개 요소 동시 정렬 = 기관 매집 패턴. $2,200 지지 시 $2,400-$2,500 테스트.", counter: "BTC $74K 돌파 실패 시 동반 하락. FOMC 매파 발언 리스크." },
+    { symbol: "BTC", signal: "LONG", priority: 2, tags: "숏스퀴즈 세팅 + ETF유입", interpretation: "$74,300 돌파 시 $80K 열림. 네거티브 펀딩 + 스팟 매수 = 스퀴즈 구조.", counter: "FOMC 매파 → 리스크오프. 유가 $100+ 지속 → 금리인하 기대 후퇴." }
+  ],
+  alerts: [
+    { target: "BTC", event: "30분 내 $1,800 급등", reason: "숏 $113M 강제 청산" },
+    { target: "ETH", event: "24h +7.5% 급등", reason: "Voorhees $49M 매집 + ETF $161M" },
+    { target: "심리", event: "공포탐욕 15, 38일 연속", reason: "2022 루나 이후 최장 극단적 공포" },
+    { target: "매크로", event: "FOMC 내일 시작", reason: "금리 동결 예상, 파월 발언이 변수" }
+  ],
+  liqMap: [
+    { symbol: "BTC", longLiq: "$71,200-$71,800", shortLiq: "$75,000-$76,500" },
+    { symbol: "ETH", longLiq: "$2,100-$2,150", shortLiq: "$2,350-$2,400" }
+  ],
+  netflow: [
+    { symbol: "BTC", direction: "유출", amount: "-12,400 BTC", meaning: "홀딩 시그널" },
+    { symbol: "ETH", direction: "유출", amount: "-48,000 ETH", meaning: "콜드월렛 이동" }
+  ],
+  structure: [
+    { label: "TOTAL", value: "2.491T", change: 1.58 },
+    { label: "TOTAL2", value: "1.015T", change: 1.91 },
+    { label: "TOTAL3", value: "741.4B", change: 1.15 },
+    { label: "USDT.D", value: "7.387%", change: -1.58 },
+    { label: "DEFI", value: "78.1B", change: 2.25 }
+  ],
+  remember: [
+    "ETH가 주인공. 고래 매집 + ETF 유입 + OI 증가 + 풋 소멸 동시 발생 = 기관 매집 패턴.",
+    "가격 ↑ vs 심리 ↓ 괴리. 공포탐욕 15인데 BTC는 40일 고점. 괴리 해소 시 큰 움직임.",
+    "내일 FOMC가 분기점. 금리 동결은 기정사실. 파월 발언 톤이 이번 주 방향 결정."
+  ]
+};
+
+var WEEKLY = {
+  week: "2026-03-10 ~ 03-16",
+  narrative: { tags: ["#극단공포속반등", "#ETH기관매집", "#FOMC대기"], summary: "38일 연속 Extreme Fear에도 BTC는 $66K→$74K 레인지 상단을 테스트. ETH는 Voorhees 매집과 ETF 3주 연속 유입으로 주간 +12% 기록." },
+  performance: [
+    { symbol: "BTC", open: 70100, close: 73795, high: 74300, low: 69200, weekPct: 5.3 },
+    { symbol: "ETH", open: 2020, close: 2264, high: 2280, low: 1960, weekPct: 12.1 },
+    { symbol: "SOL", open: 85, close: 93.66, high: 95, low: 82, weekPct: 10.2 },
+    { symbol: "XAUT", open: 4990, close: 4971, high: 5010, low: 4950, weekPct: -0.4 }
+  ],
+  signalReview: [
+    { date: "03-11", symbol: "BTC", signal: "LONG", entry: 70200, current: 73795, result: "WIN", pct: 5.1 },
+    { date: "03-13", symbol: "ETH", signal: "LONG", entry: 2133, current: 2264, result: "WIN", pct: 6.1 },
+    { date: "03-12", symbol: "SOL", signal: "LONG", entry: 88, current: 93.66, result: "WIN", pct: 6.4 }
+  ],
+  sectors: [
+    { name: "L1", change: 7.2 }, { name: "DeFi", change: 5.8 }, { name: "L2", change: 3.1 },
+    { name: "AI", change: 8.5 }, { name: "Meme", change: -2.3 }, { name: "Infra", change: 1.5 }
+  ],
+  scenarios: [
+    { symbol: "BTC", bullish: "$74,300 돌파 → $80,000", bearish: "$70,500 이탈 → $66,000", keyLevel: "저항 $74,300 / 지지 $70,500" },
+    { symbol: "ETH", bullish: "$2,200 지지 → $2,500", bearish: "$2,100 이탈 → $1,960", keyLevel: "저항 $2,400 / 지지 $2,200" },
+    { symbol: "SOL", bullish: "$95 돌파 → $105", bearish: "$88 이탈 → $82", keyLevel: "저항 $95 / 지지 $88" }
+  ],
+  macroCalendar: [
+    { date: "3/17-18", event: "FOMC", impact: "상", note: "금리 동결 예상. 파월 발언 톤이 핵심" },
+    { date: "3/19", event: "미국 주택착공", impact: "중", note: "경기 선행지표" },
+    { date: "3/21", event: "유럽 PMI", impact: "중", note: "글로벌 경기 센티먼트" }
+  ],
+  remember: [
+    "ETH 주간 +12% — 기관 매집 구조 확인. $2,200 지지 여부가 다음 주 핵심.",
+    "시그널 3/3 WIN — 극단적 공포 구간에서의 롱 시그널 적중률 100%.",
+    "FOMC + 유가가 다음 주 최대 변수. 파월 매파 발언 시 이번 주 상승분 반납 가능."
+  ]
+};
+
+var STARS = { 3: "★★★", 2: "★★", 1: "★", 0: "☆" };
+var currentMode = "daily";
+var dailyData = DAILY;
+var weeklyData = WEEKLY;
+
+function fp(p) {
+  if (p >= 10000) return "$" + Math.round(p).toLocaleString("en-US");
+  if (p >= 1) return "$" + p.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return "$" + p.toFixed(4);
+}
+function fpc(p) { return (p >= 0 ? "+" : "") + p.toFixed(1) + "%"; }
+function pc(p) { return p > 0 ? "#00ffa3" : p < 0 ? "#ff4466" : "#8a8f98"; }
+function gc(v) { return v <= 25 ? "#ff4466" : v <= 50 ? "#ffaa00" : v <= 75 ? "#88cc44" : "#00ffa3"; }
+
+function makeTags(tags, color) {
+  var html = "";
+  for (var i = 0; i < tags.length; i++) {
+    html += '<span class="tag" style="background:' + color + '18;color:' + color + ';border:1px solid ' + color + '30">' + tags[i] + '</span>';
+  }
+  return html;
+}
+
+function makeCard(title, content, accent, badge) {
+  var ac = accent || "#e8e6e3";
+  var bdgHtml = badge ? '<div class="bdg">' + badge + '</div>' : "";
+  return '<div class="card"><div class="card-hd"><div class="card-title" style="color:' + ac + '">' + title + '</div>' + bdgHtml + '</div>' + content + '</div>';
+}
+
+function ibox(txt) {
+  return '<div class="ibox">💡 ' + txt + '</div>';
+}
+function cbox(txt) {
+  return '<div class="cbox"><strong>⚠ 반대 시나리오:</strong> ' + txt + '</div>';
+}
+
+function makeTable(headers, rows) {
+  var ths = "";
+  for (var i = 0; i < headers.length; i++) {
+    ths += '<th' + (i > 0 ? ' class="r"' : '') + '>' + headers[i] + '</th>';
+  }
+  var trs = "";
+  for (var r = 0; r < rows.length; r++) {
+    var row = rows[r];
+    var tds = "";
+    for (var c = 0; c < row.length; c++) {
+      tds += '<td' + (c > 0 ? ' class="r"' : '') + '>' + row[c] + '</td>';
+    }
+    trs += '<tr>' + tds + '</tr>';
+  }
+  return '<div class="tbl-wrap"><table><thead><tr>' + ths + '</tr></thead><tbody>' + trs + '</tbody></table></div>';
+}
+
+function makeGauge(value, label, streak) {
+  var color = gc(value);
+  var angle = (value / 100) * 180 - 90;
+  var rad = angle * Math.PI / 180;
+  var x2 = (60 + 36 * Math.cos(rad)).toFixed(1);
+  var y2 = (58 + 36 * Math.sin(rad)).toFixed(1);
+  var dash = ((value / 100) * 157).toFixed(1);
+  var streakHtml = streak ? '<div class="gauge-str">' + streak + '일 연속</div>' : "";
+  return '<div class="gauge-wrap">' +
+    '<svg width="120" height="68" viewBox="0 0 120 68">' +
+    '<path d="M10 60 A50 50 0 0 1 110 60" fill="none" stroke="#1e2028" stroke-width="8" stroke-linecap="round"/>' +
+    '<path d="M10 60 A50 50 0 0 1 110 60" fill="none" stroke="' + color + '" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + dash + ' 157"/>' +
+    '<line x1="60" y1="58" x2="' + x2 + '" y2="' + y2 + '" stroke="#e8e6e3" stroke-width="2" stroke-linecap="round"/>' +
+    '<circle cx="60" cy="58" r="3" fill="#e8e6e3"/>' +
+    '</svg>' +
+    '<div class="gauge-num" style="color:' + color + '">' + value + '</div>' +
+    '<div class="gauge-lbl" style="color:' + color + '">' + label + '</div>' +
+    streakHtml + '</div>';
+}
+
+function barSVG(data) {
+  var W = 300, H = 100, n = data.length;
+  var max = 0;
+  for (var i = 0; i < n; i++) { if (Math.abs(data[i].weekPct) > max) max = Math.abs(data[i].weekPct); }
+  if (max === 0) max = 1;
+  var bw = Math.floor(W / n) - 6;
+  var mid = H / 2;
+  var html = '';
+  for (var i = 0; i < n; i++) {
+    var pct = data[i].weekPct / max;
+    var bh = Math.abs(pct) * (mid - 4);
+    var x = i * (W / n) + 3;
+    var y = pct >= 0 ? mid - bh : mid;
+    var color = data[i].weekPct >= 0 ? "#00ffa3" : "#ff4466";
+    var lx = (x + bw / 2).toFixed(0);
+    html += '<rect x="' + x.toFixed(0) + '" y="' + y.toFixed(0) + '" width="' + bw + '" height="' + bh.toFixed(0) + '" rx="3" fill="' + color + '" opacity=".7"/>';
+    html += '<text x="' + lx + '" y="' + (H - 2) + '" text-anchor="middle" fill="#6b7080" font-size="10">' + data[i].symbol + '</text>';
+  }
+  return '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" style="overflow:visible">' + html + '<line x1="0" y1="' + mid + '" x2="' + W + '" y2="' + mid + '" stroke="#1e2028" stroke-width="1"/></svg>';
+}
+
+function hbarSVG(data) {
+  var W = 280, rh = 26, lw = 38, baw = W - lw - 40;
+  var max = 0;
+  for (var i = 0; i < data.length; i++) { if (Math.abs(data[i].change) > max) max = Math.abs(data[i].change); }
+  if (max === 0) max = 1;
+  var H = data.length * rh + 8;
+  var html = '';
+  for (var i = 0; i < data.length; i++) {
+    var color = data[i].change >= 0 ? "#00ffa3" : "#ff4466";
+    var bw = (Math.abs(data[i].change / max) * baw).toFixed(1);
+    var y = i * rh + 4;
+    html += '<text x="' + (lw - 4) + '" y="' + (y + 16) + '" text-anchor="end" fill="#c9cdd4" font-size="11">' + data[i].name + '</text>';
+    html += '<rect x="' + lw + '" y="' + (y + 6) + '" width="' + bw + '" height="' + (rh - 12) + '" rx="3" fill="' + color + '" opacity=".65"/>';
+    html += '<text x="' + (parseFloat(bw) + lw + 4) + '" y="' + (y + 16) + '" fill="' + color + '" font-size="10">' + fpc(data[i].change) + '</text>';
+  }
+  return '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '">' + html + '</svg>';
+}
+
+function renderDaily(d) {
+  var sigMap = {};
+  for (var i = 0; i < d.signals.length; i++) { sigMap[d.signals[i].symbol] = d.signals[i]; }
+
+  var pcards = "";
+  for (var i = 0; i < d.prices.length; i++) {
+    var c = d.prices[i];
+    var sig = sigMap[c.symbol];
+    var sigHtml = "";
+    if (sig) {
+      var sc = sig.signal === "LONG" ? "#00ffa3" : "#ff4466";
+      var arrow = sig.signal === "LONG" ? "▲" : "▼";
+      var starColor = sig.priority >= 3 ? "#ffaa00" : sig.priority >= 2 ? "#00ffa3" : "#8a8f98";
+      sigHtml = '<span class="sig-inline" style="color:' + sc + '">' + arrow + ' ' + sig.signal + ' <span style="color:' + starColor + '">' + (STARS[sig.priority] || "☆") + '</span></span>';
+    }
+    pcards += '<div class="pcard"><div class="pcard-top"><span class="pcard-sym">' + c.symbol + '</span>' + sigHtml + '</div>' +
+      '<div class="pcard-price">' + fp(c.price) + '</div>' +
+      '<div class="pcard-chg" style="color:' + pc(c.change) + '">' + fpc(c.change) + '</div></div>';
+  }
+
+  var metRows = [
+    ["총 시총", d.metrics.totalMcap],
+    ["BTC.D", d.metrics.btcD + "%"],
+    ["BTC 펀딩", '<span style="color:' + (d.metrics.funding < 0 ? "#ff4466" : "#00ffa3") + '">' + d.metrics.funding + '%</span>'],
+    ["BTC OI", d.metrics.oi + ' <small style="color:#00ffa3">+' + d.metrics.oiChange + '%</small>'],
+    ["총 선물 OI", d.metrics.totalOI + ' <small style="color:#00ffa3">+' + d.metrics.totalOIChange + '%</small>']
+  ];
+
+  var tradfiRows = [];
+  for (var i = 0; i < d.tradfi.length; i++) {
+    var t = d.tradfi[i];
+    tradfiRows.push([t.label, t.price, '<span style="color:' + pc(t.change) + ';font-weight:600">' + fpc(t.change) + '</span>']);
+  }
+
+  var alertsHtml = "";
+  for (var i = 0; i < d.alerts.length; i++) {
+    var a = d.alerts[i];
+    alertsHtml += '<div class="alert-row"><span class="tag" style="background:rgba(255,68,102,.1);color:#ff4466;border:1px solid rgba(255,68,102,.18);flex-shrink:0">' + a.target + '</span>' +
+      '<div><div class="alert-ev">' + a.event + '</div><div class="alert-rs">' + a.reason + '</div></div></div>';
+  }
+
+  var liqHtml = "";
+  for (var i = 0; i < d.liqMap.length; i++) {
+    var l = d.liqMap[i];
+    liqHtml += '<div class="liq-blk"><div class="liq-sym">' + l.symbol + '</div>' +
+      '<div class="liq-chips"><span class="chip-long">롱청산 ' + l.longLiq + '</span><span class="chip-short">숏청산 ' + l.shortLiq + '</span></div></div>';
+  }
+
+  var flowHtml = "";
+  for (var i = 0; i < d.netflow.length; i++) {
+    var n = d.netflow[i];
+    var fc = n.direction === "유출" ? "#00ffa3" : "#ff4466";
+    flowHtml += '<div class="flow-row"><div class="flow-top"><span class="flow-sym">' + n.symbol + '</span>' +
+      '<span class="flow-amt" style="color:' + fc + '">' + n.amount + '</span></div>' +
+      '<div class="flow-sub">' + n.direction + ' → ' + n.meaning + '</div></div>';
+  }
+
+  var structHtml = '<div class="struct-grid">';
+  for (var i = 0; i < d.structure.length; i++) {
+    var s = d.structure[i];
+    structHtml += '<div class="struct-item"><div class="struct-lbl">' + s.label + '</div>' +
+      '<div class="struct-val">' + s.value + '</div>' +
+      '<div class="struct-chg" style="color:' + pc(s.change) + '">' + fpc(s.change) + '</div></div>';
+  }
+  structHtml += '</div>';
+
+  var signalsHtml = "";
+  for (var i = 0; i < d.signals.length; i++) {
+    var sig = d.signals[i];
+    var sc = sig.signal === "LONG" ? "#00ffa3" : "#ff4466";
+    var tagParts = sig.tags.split(" + ");
+    var tagsHtml = "";
+    for (var j = 0; j < tagParts.length; j++) {
+      tagsHtml += '<span class="tag" style="background:#00ffa318;color:#00ffa3;border:1px solid #00ffa330">' + tagParts[j] + '</span>';
+    }
+    signalsHtml += makeCard(sig.symbol + " 상세분석",
+      '<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">' + tagsHtml + '</div>' + ibox(sig.interpretation) + cbox(sig.counter),
+      sc, STARS[sig.priority] || "☆");
+  }
+
+  var remHtml = "";
+  for (var i = 0; i < d.remember.length; i++) {
+    remHtml += '<div class="rem-row"><span class="rem-num">' + (i + 1) + '</span><span class="rem-txt">' + d.remember[i] + '</span></div>';
+  }
+
+  var parts = [];
+  parts.push(makeCard("오늘의 내러티브", '<div style="margin-bottom:6px">' + makeTags(d.narrative.tags, "#ffaa00") + '</div><div class="narrative">' + d.narrative.summary + '</div>', "#ffaa00"));
+  parts.push('<div class="pgrid">' + pcards + '</div>');
+  parts.push('<div class="two-col">' + makeCard("시장 지표", makeTable(["지표", "값"], metRows), "#e8e6e3", "Market") + makeCard("공포 & 탐욕", makeGauge(d.metrics.fng, d.metrics.fngLabel, d.metrics.fngStreak) + ibox("가격은 40일 고점인데 심리는 극단적 공포. 괴리 해소 시 큰 움직임."), null, "Sentiment") + '</div>');
+  parts.push(makeCard("외부 시장", makeTable(["지표", "가격", "변동"], tradfiRows) + ibox("미국 주식 약세인데 BTC 상승 — 드문 디커플링."), "#e8e6e3", "TradFi"));
+  parts.push(makeCard("⚠ 이상 감지", alertsHtml, "#ff4466", "Alert"));
+  parts.push('<div class="two-col">' + makeCard("청산 지도", liqHtml + ibox("BTC 숏 청산 $75K 집중. 돌파 시 연쇄 가속."), "#ff6b35", "Liquidation") + makeCard("거래소 자금 흐름", flowHtml + ibox("BTC/ETH 순유출. 매도 물량 감소 + ETF 매수 = 상승 압력."), "#4ecdc4", "On-chain") + '</div>');
+  parts.push(signalsHtml);
+  parts.push(makeCard("시장 구조", structHtml + ibox("USDT.D -1.58% 핵심. 현금→코인 자금 이동 중."), "#6c5ce7", "상급자용"));
+  parts.push(makeCard("오늘 기억할 것 3가지", remHtml, "#ffaa00"));
+  parts.push('<div class="footer">이 리포트는 투자 조언이 아닌 시장 구조 분석입니다.</div>');
+  return parts.join("");
+}
+
+function renderWeekly(d) {
+  var wr = 0;
+  for (var i = 0; i < d.signalReview.length; i++) { if (d.signalReview[i].result === "WIN") wr++; }
+
+  var perfRows = [];
+  for (var i = 0; i < d.performance.length; i++) {
+    var p = d.performance[i];
+    perfRows.push(['<strong>' + p.symbol + '</strong>', fp(p.open), fp(p.close), fp(p.high), fp(p.low), '<span style="color:' + pc(p.weekPct) + ';font-weight:700">' + fpc(p.weekPct) + '</span>']);
+  }
+
+  var sigRows = [];
+  for (var i = 0; i < d.signalReview.length; i++) {
+    var s = d.signalReview[i];
+    var rc = s.result === "WIN" ? "#00ffa3" : "#ff4466";
+    var rbg = s.result === "WIN" ? "rgba(0,255,163,.1)" : "rgba(255,68,102,.1)";
+    sigRows.push([s.date, '<strong>' + s.symbol + '</strong>',
+      '<span style="color:' + (s.signal === "LONG" ? "#00ffa3" : "#ff4466") + '">▲ ' + s.signal + '</span>',
+      fp(s.entry), fp(s.current),
+      '<span style="padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;background:' + rbg + ';color:' + rc + '">' + s.result + '</span>',
+      '<span style="color:' + pc(s.pct) + ';font-weight:600">' + fpc(s.pct) + '</span>']);
+  }
+
+  var macroRows = [];
+  for (var i = 0; i < d.macroCalendar.length; i++) {
+    var m = d.macroCalendar[i];
+    macroRows.push([m.date, '<strong>' + m.event + '</strong>',
+      '<span style="color:' + (m.impact === "상" ? "#ff4466" : "#ffaa00") + ';font-weight:600">' + m.impact + '</span>',
+      '<small style="color:#8a8f98">' + m.note + '</small>']);
+  }
+
+  var scenHtml = "";
+  for (var i = 0; i < d.scenarios.length; i++) {
+    var s = d.scenarios[i];
+    scenHtml += '<div class="scen-row"><div class="scen-sym">' + s.symbol + '</div>' +
+      '<div class="scen-cols"><div class="bull-box"><div class="box-ttl">시나리오 A (상승)</div>' + s.bullish + '</div>' +
+      '<div class="bear-box"><div class="box-ttl">시나리오 B (하락)</div>' + s.bearish + '</div></div>' +
+      '<div class="key-lv">핵심 레벨: ' + s.keyLevel + '</div></div>';
+  }
+
+  var remHtml = "";
+  for (var i = 0; i < d.remember.length; i++) {
+    remHtml += '<div class="rem-row"><span class="rem-num">' + (i + 1) + '</span><span class="rem-txt">' + d.remember[i] + '</span></div>';
+  }
+
+  var winColor = wr === d.signalReview.length ? "#00ffa3" : "#ffaa00";
+  var parts = [];
+  parts.push(makeCard("이번 주 내러티브", '<div style="margin-bottom:6px">' + makeTags(d.narrative.tags, "#ffaa00") + '</div><div class="narrative">' + d.narrative.summary + '</div>', "#ffaa00"));
+  parts.push(makeCard("주간 성과표", makeTable(["코인", "시가", "종가", "고점", "저점", "주간%"], perfRows) + '<div style="margin-top:10px">' + barSVG(d.performance) + '</div>', "#e8e6e3", d.week));
+  parts.push(makeCard("시그널 회고", makeTable(["날짜", "코인", "시그널", "진입", "현재", "결과", "수익"], sigRows) + ibox("시그널 " + wr + "/" + d.signalReview.length + " 적중. 극단적 공포 구간 롱 시그널 전체 WIN."), winColor, wr + "/" + d.signalReview.length + " WIN"));
+  parts.push(makeCard("섹터 로테이션", '<div style="margin-top:4px">' + hbarSVG(d.sectors) + '</div>' + ibox("AI 섹터 +8.5% 최강. Meme -2.3% 유일 약세."), "#6c5ce7", "주간"));
+  parts.push(makeCard("매크로 캘린더", makeTable(["날짜", "이벤트", "영향도", "비고"], macroRows), "#ff6b35", "다음 주"));
+  parts.push(makeCard("포지션 체크리스트", scenHtml, "#00ffa3", "다음 주 준비"));
+  parts.push(makeCard("이번 주 기억할 것 3가지", remHtml, "#ffaa00"));
+  parts.push('<div class="footer">이 리포트는 투자 조언이 아닌 시장 구조 분석입니다.</div>');
+  return parts.join("");
+}
+
+function render() {
+  var el = document.getElementById("main");
+  if (!el) return;
+  try {
+    el.innerHTML = currentMode === "daily" ? renderDaily(dailyData) : renderWeekly(weeklyData);
+  } catch(e) {
+    el.innerHTML = '<div style="padding:20px;color:#ff4466">렌더링 오류: ' + e.message + '</div>';
+  }
+}
+
+function switchMode(m) {
+  currentMode = m;
+  document.getElementById("tab-daily").className = m === "daily" ? "tab on" : "tab";
+  document.getElementById("tab-weekly").className = m === "weekly" ? "tab on" : "tab";
+  render();
+}
+
+function updateTs() {
+  var el = document.getElementById("ts");
+  if (el) el.textContent = new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+}
+
+async function fetchReport() {
+  var btn = document.getElementById("btnR");
+  btn.disabled = true;
+  btn.textContent = "검색 중...";
+  try {
+    var isD = currentMode === "daily";
+    var sys = isD
+      ? 'You are a crypto data API. Return ONLY valid JSON, no markdown, no backticks. Schema: {"date":"YYYY-MM-DD","narrative":{"tags":["#tag1"],"summary":""},"prices":[{"symbol":"BTC","price":0,"change":0}],"metrics":{"totalMcap":"","btcD":0,"fng":0,"fngLabel":"","fngStreak":0,"funding":0,"oi":"","oiChange":0,"totalOI":"","totalOIChange":0},"tradfi":[{"label":"","price":"","change":0}],"signals":[{"symbol":"","signal":"LONG","priority":3,"tags":"","interpretation":"","counter":""}],"alerts":[{"target":"","event":"","reason":""}],"liqMap":[{"symbol":"","longLiq":"","shortLiq":""}],"netflow":[{"symbol":"","direction":"","amount":"","meaning":""}],"structure":[{"label":"","value":"","change":0}],"remember":["","",""]}'
+      : 'You are a crypto data API. Return ONLY valid JSON, no markdown, no backticks. Schema: {"week":"YYYY-MM-DD ~ MM-DD","narrative":{"tags":[],"summary":""},"performance":[{"symbol":"BTC","open":0,"close":0,"high":0,"low":0,"weekPct":0}],"signalReview":[{"date":"MM-DD","symbol":"","signal":"LONG","entry":0,"current":0,"result":"WIN","pct":0}],"sectors":[{"name":"","change":0}],"scenarios":[{"symbol":"","bullish":"","bearish":"","keyLevel":""}],"macroCalendar":[{"date":"","event":"","impact":"상","note":""}],"remember":["","",""]}';
+
+    var res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 3000,
+        system: sys,
+        tools: [{ type: "web_search_20250305", name: "web_search" }],
+        messages: [{ role: "user", content: isD ? "Get today's crypto market data and return the JSON." : "Get this week's crypto market data and return the JSON." }]
+      })
+    });
+    var data = await res.json();
+    var textBlock = null;
+    if (data.content) {
+      for (var i = 0; i < data.content.length; i++) {
+        if (data.content[i].type === "text") { textBlock = data.content[i]; break; }
+      }
+    }
+    if (textBlock && textBlock.text) {
+      var clean = textBlock.text.replace(/```json/g, "").replace(/```/g, "").trim();
+      var parsed = JSON.parse(clean);
+      if (isD) dailyData = parsed; else weeklyData = parsed;
+      updateTs();
+      render();
+    }
+  } catch(e) {
+    console.error(e);
+  }
+  btn.disabled = false;
+  btn.textContent = "🔄 새로고침";
+}
+
+updateTs();
+render();
+</script>
+
+</body>
+</html>
