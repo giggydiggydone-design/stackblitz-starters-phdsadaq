@@ -117,7 +117,7 @@ body{background:var(--bg-0);color:var(--text);font-family:'JetBrains Mono',monos
     <div class="chart-wrap"><canvas id="cMain"></canvas></div>
     <div class="chart-wrap" style="margin-top:2px"><canvas id="cVol"></canvas></div>
     <div class="legend" id="lgBox"></div>
-    <div class="interp" id="interp-chart"></div>
+    <div id="interp-chart"></div>
   </div>
   <div class="panels-2col">
     <div class="panel">
@@ -129,7 +129,7 @@ body{background:var(--bg-0);color:var(--text);font-family:'JetBrains Mono',monos
       </div>
       <div id="cs1-dash"><div class="cs-grid" id="cs1g"></div><div class="sig-row" id="cs1s"></div></div>
       <div id="cs1-chart" style="display:none"><div class="ind-chart-area"><canvas id="cs1Canvas"></canvas></div><div class="legend" id="cs1Lg"></div></div>
-      <div class="interp" id="interp-cs1"></div>
+      <div id="interp-cs1"></div>
     </div>
     <div class="panel">
       <div class="p-title"><span>CS v2 ─ MOMENTUM</span>
@@ -140,7 +140,7 @@ body{background:var(--bg-0);color:var(--text);font-family:'JetBrains Mono',monos
       </div>
       <div id="cs2-dash"><div id="cs2b"></div><div class="sig-row" id="cs2s" style="margin-top:8px"></div></div>
       <div id="cs2-chart" style="display:none"><div class="ind-chart-area"><canvas id="cs2Canvas"></canvas></div><div class="legend" id="cs2Lg"></div></div>
-      <div class="interp" id="interp-cs2"></div>
+      <div id="interp-cs2"></div>
     </div>
   </div>
 
@@ -302,11 +302,78 @@ function processData(oh){
 const FI={"RVWAP":{name:"RVWAP 정렬",desc:"가격이 RVWAP(10/20) 대비 위치. 거래량 가중 평균.",how:"<b>▲:</b> 가격 > RVWAP → 매수세 우위. <b>▼:</b> 아래 → 매도세."},"RV200":{name:"RVWAP 200",desc:"장기 RVWAP(200) 대비 가격 위치.",how:"<b>▲:</b> 장기 상승. <b>▼:</b> 장기 하락."},"VW-RSI":{name:"VW-RSI",desc:"거래량 가중 RSI. 볼륨 없는 가격 변동 필터링.",how:"<b>55+:</b> 롱. <b>45−:</b> 숏. <b>65+/35−:</b> 과매수/과매도."},"VW-MACD":{name:"VW-MACD",desc:"MACD 히스토그램. 모멘텀 방향.",how:"<b>양수:</b> 상승 모멘텀. <b>음수:</b> 하락."},"TTM-SQ":{name:"TTM Squeeze",desc:"BB가 KC 안으로 수축 = 변동성 압축.",how:"<b>▲:</b> 스퀴즈 감지. <b>MOM±:</b> 방향."},"MFI":{name:"MFI",desc:"자금 유입/유출 강도 (볼륨 RSI).",how:"<b>55+:</b> 유입. <b>45−:</b> 유출."},"OBV":{name:"OBV 구조",desc:"누적 거래량 방향.",how:"<b>ABOVE:</b> OBV>EMA20 → 매수 거래량 지지."},"EMA10 SLOPE":{name:"EMA10 기울기",desc:"단기 EMA(10) 3봉 기울기.",how:"<b>+0.2%+:</b> 강한 상승. <b>−0.2%−:</b> 강한 하락."},"EMA20 SLOPE":{name:"EMA20 기울기",desc:"중단기 EMA(20) 5봉 기울기.",how:"EMA10과 같은 방향 = 추세 확인."},"RVWAP SPREAD":{name:"RVWAP 스프레드",desc:"RVWAP(10)-RVWAP(60) 괴리.",how:"양수 = 상승 가속. 음수 = 하락."},"VOL RATIO":{name:"거래량 비율",desc:"현재 봉 / 20봉 평균.",how:"<b>1.2x+:</b> 높은 참여도. <b>0.5x−:</b> 저조."},"MACD CROSS":{name:"MACD 교차",desc:"MACD > Signal = 골든크로스.",how:"▲ 롱. ▼ 숏."},"PRICE/EMA60":{name:"가격/EMA60 이격",desc:"EMA60 대비 이탈도.",how:"<b>|2%+|:</b> 과열 경계."},"OBV MOM":{name:"OBV 모멘텀",desc:"5봉 OBV 변화량.",how:"양수 = 매수 거래량 증가."}};
 
 // ═══════════════════════════════════════════════════════════
-// INTERPRETATIONS
+// DEEP MULTI-LAYER INTERPRETATIONS
 // ═══════════════════════════════════════════════════════════
-function interpChart(d){let b,l=[];if(d.bullEA){b="long";l.push("EMA 완전 정배열. 강한 상승 추세.");}else if(d.bearEA){b="short";l.push("EMA 완전 역배열. 강한 하락 추세.");}else if(d.e10a60&&d.pA200){b="long";l.push("EMA(10)>EMA(60), 가격>EMA200. 상승 편향.");}else if(!d.e10a60&&!d.pA200){b="short";l.push("EMA(10)<EMA(60), 가격<EMA200. 하락 편향.");}else{b="neutral";l.push("EMA 구조 혼조. 횡보/전환 구간.");}if(d.rvAe)l.push("RVWAP(10)>EMA(10): 매수세 거래량 우위.");else l.push("RVWAP(10)<EMA(10): 매도세 거래량.");const sp=Math.abs(d.sp10_200).toFixed(2);if(Math.abs(d.sp10_200)>2)l.push(`EMA10-200 스프레드 ${sp}% 확대.`);else if(Math.abs(d.sp10_200)<0.5)l.push(`EMA10-200 스프레드 ${sp}% 수렴 → 압축.`);return{bias:b,lines:l};}
-function interpCS1(d){let b,l=[];if(d.lc>=5){b="long";l.push(`${d.lc}/7 롱 컨플루언스 → 매수 우위.`);}else if(d.sc>=5){b="short";l.push(`${d.sc}/7 숏 컨플루언스 → 매도 우위.`);}else if(d.lc>=4){b="long";l.push(`롱 ${d.lc}/7. 편향은 있으나 5+ 미달.`);}else if(d.sc>=4){b="short";l.push(`숏 ${d.sc}/7. 편향 있으나 미달.`);}else{b="neutral";l.push(`L${d.lc}/S${d.sc}. 방향 불명확. 관망.`);}if(d.rsi>65)l.push(`RSI ${d.rsi.toFixed(0)} 과매수 경계.`);else if(d.rsi<35)l.push(`RSI ${d.rsi.toFixed(0)} 과매도.`);if(d.mfi>70)l.push(`MFI ${d.mfi.toFixed(0)} 자금 유입 강세.`);return{bias:b,lines:l};}
-function interpCS2(d){let b,l=[];if(d.c2l>=5){b="long";l.push(`모멘텀 ${d.c2l}/7 롱.`);}else if(d.c2s>=5){b="short";l.push(`모멘텀 ${d.c2s}/7 숏.`);}else{b="neutral";l.push(`모멘텀 혼조 L${d.c2l}/S${d.c2s}.`);}if(Math.abs(d.e10s)>0.5)l.push(`EMA10 기울기 ${d.e10s>0?"+":""}${d.e10s.toFixed(2)}%.`);if(d.volR>1.5)l.push(`거래량 ${d.volR.toFixed(1)}x 높은 참여도.`);return{bias:b,lines:l};}
+function interpChart(d){
+  const L=d.cl.length-1;let b="neutral",lines=[];
+  // ── Layer 1: 각 이평선 개별 해석 ──
+  lines.push('<b style="color:#C8A84E">── 이평선별 구조 분석 ──</b>');
+  const pList=[{p:10,nm:"10 (초단기)",role:"스캘핑/데이 트레이딩 기준선. 가격이 이 위에 있으면 직전 모멘텀이 살아있다."},
+    {p:60,nm:"60 (단기)",role:"스윙 트레이딩 핵심선. 4H 차트의 15봉 이평선에 해당. 추세 방향 판별."},
+    {p:120,nm:"120 (중기)",role:"중기 추세. 이 위에 있으면 수 주~수 개월 추세가 상승."},
+    {p:200,nm:"200 (장기)",role:"가장 중요한 추세선. 기관이 bull/bear 마켓 판별에 사용."},
+    {p:350,nm:"350 (초장기)",role:"매크로 추세. 이 위면 대세 상승장 진행 중."}];
+  let bullLines=0,bearLines=0;
+  pList.forEach(x=>{
+    const eV=d.emas[x.p][L],rV=d.rvs[x.p][L],price=d.cl[L];
+    const aboveE=price>eV,aboveR=price>rV;
+    const eDiff=((price-eV)/eV*100).toFixed(2);
+    const rDiff=((price-rV)/rV*100).toFixed(2);
+    const rvVsE=rV>eV;
+    let status="";
+    if(aboveE&&aboveR){status="✅ 가격 > EMA & RVWAP → 상승 지지";bullLines++;}
+    else if(!aboveE&&!aboveR){status="🔻 가격 < EMA & RVWAP → 하락 압력";bearLines++;}
+    else if(aboveR&&!aboveE){status="⚡ RVWAP 위, EMA 아래 → 거래량은 매수 우위이나 모멘텀 약화";bullLines+=0.5;}
+    else{status="⚠ EMA 위, RVWAP 아래 → 모멘텀은 있으나 거래량 미확인";bearLines+=0.5;}
+    const rvNote=rvVsE?"RVWAP>EMA (볼륨이 가격을 끌어올리는 중)":"RVWAP<EMA (저볼륨 상승 또는 매도 볼륨)";
+    lines.push(`<b style="color:#E8DFC0">${x.nm}</b> — ${x.role}<br>└ 이격: EMA ${eDiff}% / RVWAP ${rDiff}% · ${rvNote}<br>└ ${status}`);
+  });
+  // ── Layer 2: 구조 종합 ──
+  lines.push('<b style="color:#C8A84E">── 구조 종합 ──</b>');
+  if(d.bullEA){b="long";lines.push("EMA 완전 정배열 (10>20>60>120>200>350). 가장 강한 상승 구조. 모든 시간대에서 매수세가 우위.");}
+  else if(d.bearEA){b="short";lines.push("EMA 완전 역배열. 가장 강한 하락 구조. 반등은 매도 기회로 작용할 가능성.");}
+  else if(bullLines>=3){b="long";lines.push(`5개 이평선 중 ${bullLines}개가 상승 지지. 부분 정배열 — 상승 편향이나 완전한 추세는 아님.`);}
+  else if(bearLines>=3){b="short";lines.push(`5개 이평선 중 ${bearLines}개가 하락 압력. 부분 역배열.`);}
+  else{lines.push("이평선 구조 혼조. 단기와 장기가 다른 방향 → 전환 구간 또는 횡보.");}
+  // ── Layer 3: EMA vs RVWAP 괴리 ──
+  lines.push('<b style="color:#C8A84E">── EMA vs RVWAP 괴리 분석 ──</b>');
+  if(d.rvAe) lines.push("RVWAP(10) > EMA(10): 최근 거래에서 매수자가 더 높은 가격을 지불 → 실질 매수 수요 확인.");
+  else lines.push("RVWAP(10) < EMA(10): 최근 거래량의 무게중심이 가격 아래 → 매도 거래량이 가격을 누르는 중.");
+  const sp=Math.abs(d.sp10_200).toFixed(2);
+  if(Math.abs(d.sp10_200)>3) lines.push(`EMA10-200 스프레드 ${sp}% — 과도하게 확대. 평균회귀 리스크 존재. 추격 매수/매도 주의.`);
+  else if(Math.abs(d.sp10_200)>1.5) lines.push(`EMA10-200 스프레드 ${sp}% — 추세 진행 중. 적당한 확장 구간.`);
+  else lines.push(`EMA10-200 스프레드 ${sp}% — 수렴 중. 에너지 축적 → 방향성 돌파 임박 가능.`);
+  return{bias:b,lines:['<div style="line-height:1.8;font-size:10px">'+lines.join('<br style="margin-bottom:6px">')+'</div>']};
+}
+
+function interpCS1(d){
+  let b="neutral",lines=[];
+  lines.push('<b style="color:#C8A84E">── 7-Factor 개별 판정 ──</b>');
+  const details=[
+    {lbl:"① RVWAP 정렬",f:d.factors[0],explain:d.factors[0].score>0?"가격이 단기 RVWAP 위 = 거래량 가중 기준으로 매수세 우위. 기관이 현재 가격대에서 매수 참여 중일 가능성.":d.factors[0].score<0?"가격이 RVWAP 아래 = 매도 거래량이 우세. 거래량이 수반된 하락은 추세 지속 가능성 높음.":"RVWAP과 혼재 — 방향 미확정."},
+    {lbl:"② RVWAP 200",f:d.factors[1],explain:d.factors[1].score>0?"장기 거래량 가중 평균 위 = 대세 상승장 진행 중. 이 선 아래로 내려가면 장기 추세 전환 경고.":"장기 RVWAP 아래 = 대세 하락 또는 횡보. 이 위로 올라올 때까지 보수적 접근 필요."},
+    {lbl:"③ VW-RSI",f:d.factors[2],explain:`RSI ${d.rsi.toFixed(1)} — `+(d.rsi>65?"과매수 영역. 단기 되돌림 가능성↑. 신규 롱 진입은 주의.":d.rsi<35?"과매도 영역. 반등 가능성↑. 단, 추세 하락 중엔 과매도가 지속될 수 있음.":d.rsi>55?"매수 모멘텀 유지.":d.rsi<45?"매도 모멘텀 유지.":"중립 영역. 방향성 시그널 없음.")},
+    {lbl:"④ VW-MACD",f:d.factors[3],explain:d.factors[3].score>0?"히스토그램 양수 = 단기 EMA가 장기를 상회 → 상승 모멘텀 진행. 히스토그램이 커지면 가속, 줄어들면 감속.":"히스토그램 음수 = 하락 모멘텀 진행."},
+    {lbl:"⑤ TTM Squeeze",f:d.factors[4],explain:d.factors[4].score>0?"BB가 KC 안에 수축 = 변동성 압축 감지. 곧 폭발적 움직임 예상. 모멘텀 방향("+d.factors[4].raw+")으로 돌파할 가능성 높음.":"스퀴즈 미감지. 정상 변동성 구간."},
+    {lbl:"⑥ MFI",f:d.factors[5],explain:`MFI ${d.mfi.toFixed(1)} — `+(d.mfi>70?"강한 자금 유입. 가격×거래량 기준 매수 압도적.":d.mfi<30?"강한 자금 유출. 매도 압력 극단.":d.mfi>55?"자금 순유입 → 매수세 지지.":d.mfi<45?"자금 순유출 → 매도 압력.":"균형 상태.")},
+    {lbl:"⑦ OBV 구조",f:d.factors[6],explain:d.factors[6].score>0?"OBV > EMA(20) = 누적 거래량이 상승 방향. 가격이 오를 때 거래량 참여도가 높다는 의미. 구조적으로 건강한 상승.":"OBV < EMA(20) = 거래량이 상승을 뒷받침하지 못함. 가격만 오르고 실제 매수는 줄어드는 위험 신호."}
+  ];
+  details.forEach(x=>{
+    const col=x.f.score>0?"#7BC86C":x.f.score<0?"#E8734A":"#8A8060";
+    const icon=x.f.score>0?"▲":x.f.score<0?"▼":"─";
+    lines.push(`<b style="color:${col}">${icon} ${x.lbl}</b> [${x.f.raw}]<br>└ ${x.explain}`);
+  });
+  // Combined
+  lines.push('<b style="color:#C8A84E">── 종합 판정 ──</b>');
+  if(d.lc>=5){b="long";lines.push(`<b style="color:#7BC86C">강한 매수 컨플루언스 ${d.lc}/7.</b> 다수 팩터가 동시 정렬 = 기관 매집 구간일 가능성. 신뢰도 높은 롱 시그널.`);}
+  else if(d.sc>=5){b="short";lines.push(`<b style="color:#E8734A">강한 매도 컨플루언스 ${d.sc}/7.</b> 다수 팩터가 하방 정렬. 숏 또는 현금 비중 확대 권장.`);}
+  else if(d.lc>=4){b="long";lines.push(`매수 편향 ${d.lc}/7이나 완전 컨플루언스(5+) 미달. 진입 시 포지션 축소 또는 추가 확인 대기.`);}
+  else if(d.sc>=4){b="short";lines.push(`매도 편향 ${d.sc}/7. 완전 컨플루언스 미달이나 보수적 접근 필요.`);}
+  else{lines.push(`L${d.lc} / S${d.sc} — 팩터 분산. 명확한 방향 없음. 신규 진입 보류, 기존 포지션 축소 고려.`);}
+  return{bias:b,lines:['<div style="line-height:1.8;font-size:10px">'+lines.join('<br style="margin-bottom:6px">')+'</div>']};
+}
+
+function interpCS2(d){let b="neutral",l=[];if(d.c2l>=5){b="long";l.push(`모멘텀 ${d.c2l}/7 롱.`);}else if(d.c2s>=5){b="short";l.push(`모멘텀 ${d.c2s}/7 숏.`);}else{b="neutral";l.push(`모멘텀 혼조 L${d.c2l}/S${d.c2s}.`);}if(Math.abs(d.e10s)>0.5)l.push(`EMA10 기울기 ${d.e10s>0?"+":""}${d.e10s.toFixed(2)}%.`);if(d.volR>1.5)l.push(`거래량 ${d.volR.toFixed(1)}x 높은 참여도.`);return{bias:b,lines:l};}
 
 // ═══════════════════════════════════════════════════════════
 // RENDER (same drawing code, just reads from `D` instead of DB)
@@ -314,7 +381,7 @@ function interpCS2(d){let b,l=[];if(d.c2l>=5){b="long";l.push(`모멘텀 ${d.c2l
 let D=null; // current processed data
 
 function fP(p){if(p>=1000)return"$"+p.toLocaleString("en",{minimumFractionDigits:2,maximumFractionDigits:2});if(p>=1)return"$"+p.toFixed(4);if(p>=0.001)return"$"+p.toFixed(4);return"$"+p.toFixed(8);}
-function rI(id,data){const el=document.getElementById(id);const bl=data.bias==="long"?"BULLISH":data.bias==="short"?"BEARISH":"NEUTRAL";el.innerHTML=`<div class="interp-label">해석</div><span class="interp-bias ${data.bias}">${bl}</span><div class="interp-body">${data.lines.join(" ")}</div>`;}
+function rI(id,data){const el=document.getElementById(id);const bl=data.bias==="long"?"BULLISH":data.bias==="short"?"BEARISH":"NEUTRAL";el.innerHTML=`<div class="interp"><div class="interp-label">다층 분석</div><span class="interp-bias ${data.bias}">${bl}</span><div class="interp-body">${data.lines.join("<br>")}</div></div>`;}
 
 function renderStrip(){
   const el=document.getElementById("strip");el.innerHTML="";
@@ -356,14 +423,14 @@ function renderChart(){
   const tX=i=>pad.l+(i/(n-1))*cW;const tY=v=>pad.t+((yMx-v)/yR)*cH;const bW=Math.max(1,cW/n*0.6);
   ctx.strokeStyle="rgba(42,38,24,0.35)";ctx.lineWidth=0.5;
   for(let i=0;i<5;i++){const y=pad.t+(cH/4)*i;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();const val=yMx-(yR/4)*i;ctx.fillStyle="#6B6040";ctx.font="8px JetBrains Mono";ctx.fillText(val>=1?val.toFixed(1):val.toFixed(5),W-pad.r+3,y+3);}
-  const eC={10:"#FFD700",20:"#FF8C00",60:"#FF4500",120:"#DC143C",200:"#8B0000",350:"#5C0000"};
-  const rC={10:"#00BFFF",20:"#1E90FF",60:"#4169E1",120:"#0000CD",200:"#4B0082",350:"#2E0854"};
-  [...PERIODS].reverse().forEach(p=>{const data=D.emas[p].slice(startIdx);ctx.beginPath();ctx.strokeStyle=eC[p];ctx.lineWidth=p>=200?1.5:1;ctx.globalAlpha=0.7;data.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();ctx.globalAlpha=1;});
-  [...PERIODS].reverse().forEach(p=>{const data=D.rvs[p].slice(startIdx);ctx.beginPath();ctx.strokeStyle=rC[p];ctx.lineWidth=p>=200?1.5:1;ctx.globalAlpha=0.5;ctx.setLineDash([4,3]);data.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;});
+  const eC={10:"#F5D742",20:"#E8A830",60:"#42B4E8",120:"#B07CD8",200:"#E85454",350:"#C82050"};
+  // RVWAP = solid, same color
+  [...PERIODS].reverse().forEach(p=>{const data=D.rvs[p].slice(startIdx);ctx.beginPath();ctx.strokeStyle=eC[p];ctx.lineWidth=p>=200?1.8:1.3;ctx.globalAlpha=0.75;data.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();ctx.globalAlpha=1;});
+  // EMA = dashed, same color
+  [...PERIODS].reverse().forEach(p=>{const data=D.emas[p].slice(startIdx);ctx.beginPath();ctx.strokeStyle=eC[p];ctx.lineWidth=p>=200?1.5:1;ctx.globalAlpha=0.55;ctx.setLineDash([5,4]);data.forEach((v,i)=>{const x=tX(i),y=tY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;});
   oh.forEach((c,i)=>{const x=tX(i);const up=c.c>=c.o;ctx.strokeStyle=up?"#EEEEE8":"#E85454";ctx.lineWidth=0.8;ctx.beginPath();ctx.moveTo(x,tY(c.h));ctx.lineTo(x,tY(c.l));ctx.stroke();const bt=tY(Math.max(c.o,c.c)),bb=tY(Math.min(c.o,c.c));if(up){ctx.strokeStyle="#EEEEE8";ctx.strokeRect(x-bW/2,bt,bW,Math.max(1,bb-bt));}else{ctx.fillStyle="#E85454";ctx.fillRect(x-bW/2,bt,bW,Math.max(1,bb-bt));}});
   const lg=document.getElementById("lgBox");lg.innerHTML="";
-  Object.entries(eC).forEach(([p,c])=>{lg.innerHTML+=`<div class="legend-item"><span class="lg-line" style="background:${c}"></span>E${p}</div>`;});
-  Object.entries(rC).forEach(([p,c])=>{lg.innerHTML+=`<div class="legend-item"><span class="lg-dash" style="border-color:${c}"></span>RV${p}</div>`;});
+  Object.entries(eC).forEach(([p,c])=>{lg.innerHTML+=`<div class="legend-item"><span class="lg-line" style="background:${c}"></span>RV${p}</div><div class="legend-item"><span class="lg-dash" style="border-color:${c}"></span>E${p}</div>`;});
   const vC=document.getElementById("cVol");const vH=36;vC.style.height=vH+"px";vC.width=W*dpr;vC.height=vH*dpr;
   const vx=vC.getContext("2d");vx.scale(dpr,dpr);vx.clearRect(0,0,W,vH);const mV=Math.max(...oh.map(c=>c.v));
   oh.forEach((c,i)=>{const x=tX(i);const h=(c.v/mV)*28;const up=c.c>=c.o;vx.fillStyle=up?"rgba(38,166,91,0.55)":"rgba(232,84,84,0.55)";vx.fillRect(x-bW/2,vH-h-2,bW,h);});
@@ -391,13 +458,14 @@ function renderCS1Chart(){
   const bbU=D.bb.upper.slice(startIdx),bbL=D.bb.lower.slice(startIdx),bbM=D.bb.mid.slice(startIdx);
   ctx.beginPath();bbU.forEach((v,i)=>{i===0?ctx.moveTo(tX(i),tY(v)):ctx.lineTo(tX(i),tY(v));});for(let i=n-1;i>=0;i--)ctx.lineTo(tX(i),tY(bbL[i]));ctx.closePath();ctx.fillStyle="rgba(168,123,210,0.05)";ctx.fill();
   ctx.globalAlpha=0.45;ctx.setLineDash([3,3]);ctx.strokeStyle="#A87BD2";ctx.lineWidth=1;ctx.beginPath();bbU.forEach((v,i)=>{i===0?ctx.moveTo(tX(i),tY(v)):ctx.lineTo(tX(i),tY(v));});ctx.stroke();ctx.beginPath();bbL.forEach((v,i)=>{i===0?ctx.moveTo(tX(i),tY(v)):ctx.lineTo(tX(i),tY(v));});ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
-  [20,10].forEach(p=>{const data=D.rvs[p].slice(startIdx);ctx.beginPath();ctx.strokeStyle=p===10?"#00BFFF":"#1E90FF";ctx.lineWidth=1.5;ctx.globalAlpha=0.75;data.forEach((v,i)=>{i===0?ctx.moveTo(tX(i),tY(v)):ctx.lineTo(tX(i),tY(v));});ctx.stroke();ctx.globalAlpha=1;});
+  // RVWAP overlay lines (SOLID)
+  [20,10].forEach(p=>{const data=D.rvs[p].slice(startIdx);ctx.beginPath();ctx.strokeStyle=p===10?"#F5D742":"#E8A830";ctx.lineWidth=1.5;ctx.globalAlpha=0.75;data.forEach((v,i)=>{i===0?ctx.moveTo(tX(i),tY(v)):ctx.lineTo(tX(i),tY(v));});ctx.stroke();ctx.globalAlpha=1;});
   oh.forEach((c,i)=>{const x=tX(i);const up=c.c>=c.o;ctx.strokeStyle=up?"#EEEEE8":"#E85454";ctx.lineWidth=0.7;ctx.beginPath();ctx.moveTo(x,tY(c.h));ctx.lineTo(x,tY(c.l));ctx.stroke();const bt=tY(Math.max(c.o,c.c)),bb2=tY(Math.min(c.o,c.c));if(up){ctx.strokeStyle="#EEEEE8";ctx.strokeRect(x-bW/2,bt,bW,Math.max(1,bb2-bt));}else{ctx.fillStyle="#E85454";ctx.fillRect(x-bW/2,bt,bW,Math.max(1,bb2-bt));}});
   const sqY=H-dashH-volH2-sqDotH;sqzSlice.forEach((sq,i)=>{ctx.fillStyle=sq?"#E85454":"#26A65B";ctx.beginPath();ctx.arc(tX(i),sqY+sqDotH/2,2,0,Math.PI*2);ctx.fill();});
   const dashY=H-volH2-dashH;const labels=["RVT","RVR","VRI","VMD","TTM","MFI","OBV","Σ"];const scores=D.factors.map(f=>f.score);const cellW=Math.min(36,(cW-4)/8);const startX2=pad.l+(cW-cellW*8)/2;
   scores.concat([D.lc-D.sc]).forEach((sc,i)=>{const x=startX2+i*cellW;const isT=i===7;ctx.fillStyle=sc>0?"rgba(38,166,91,"+(isT?"0.15":"0.1")+")":sc<0?"rgba(232,84,84,"+(isT?"0.15":"0.1")+")":"rgba(42,38,24,0.3)";ctx.fillRect(x,dashY,cellW-1,dashH);ctx.strokeStyle="rgba(42,38,24,0.5)";ctx.lineWidth=0.5;ctx.strokeRect(x,dashY,cellW-1,dashH);ctx.fillStyle="#8A8060";ctx.font="6px JetBrains Mono";ctx.textAlign="center";ctx.fillText(labels[i],x+cellW/2-0.5,dashY+8);ctx.fillStyle=sc>0?"#26A65B":sc<0?"#E85454":"#6B6040";ctx.font=isT?"bold 9px JetBrains Mono":"8px JetBrains Mono";ctx.fillText(isT?String(sc):(sc>0?"1":sc<0?"-1":"0"),x+cellW/2-0.5,dashY+18);ctx.textAlign="start";});
   const mV=Math.max(...oh.map(c=>c.v));oh.forEach((c,i)=>{const x=tX(i);const h=(c.v/mV)*(volH2-4);const up=c.c>=c.o;ctx.fillStyle=up?"rgba(38,166,91,0.4)":"rgba(232,84,84,0.4)";ctx.fillRect(x-bW/2,H-2-h,bW,h);});
-  document.getElementById("cs1Lg").innerHTML=`<div class="legend-item"><span class="lg-line" style="background:#00BFFF"></span>RV10</div><div class="legend-item"><span class="lg-line" style="background:#1E90FF"></span>RV20</div><div class="legend-item"><span class="lg-dash" style="border-color:#A87BD2"></span>BB</div><div class="legend-item"><span class="lg-dash" style="border-color:#DC143C"></span>KC</div><div class="legend-item"><span style="width:5px;height:5px;border-radius:50%;background:#E85454;display:inline-block"></span>SQZ</div>`;
+  document.getElementById("cs1Lg").innerHTML=`<div class="legend-item"><span class="lg-line" style="background:#F5D742"></span>RV10</div><div class="legend-item"><span class="lg-line" style="background:#E8A830"></span>RV20</div><div class="legend-item"><span class="lg-dash" style="border-color:#A87BD2"></span>BB</div><div class="legend-item"><span class="lg-dash" style="border-color:#DC143C"></span>KC</div><div class="legend-item"><span style="width:5px;height:5px;border-radius:50%;background:#E85454;display:inline-block"></span>SQZ</div>`;
 }
 
 function renderCS2Chart(){
@@ -628,77 +696,85 @@ function renderExChart(){
 }
 
 function interpExData(d){
-  if(!d||!d.funding===null)return{bias:"neutral",lines:["데이터 로드 중..."]};
+  if(!d||d.funding===null)return{bias:"neutral",lines:["데이터 로드 중..."]};
   let bias="neutral",lines=[];
+  let bullCount=0,bearCount=0;
 
-  // Funding interpretation
+  lines.push('<b style="color:#C8A84E">── 개별 지표 분석 ──</b>');
+
+  // 1. Funding
   if(d.funding!==null){
-    if(d.funding<-0.01){
-      lines.push(`펀딩비율 ${d.funding.toFixed(4)}% — 네거티브. 숏 포지션 과밀. 숏스퀴즈 트리거 대기 중.`);
-      bias="long";
-    }else if(d.funding>0.03){
-      lines.push(`펀딩비율 ${d.funding.toFixed(4)}% — 양수 과열. 롱 포지션 과밀. 롱스퀴즈 리스크.`);
-      bias="short";
-    }else if(d.funding>0){
-      lines.push(`펀딩비율 ${d.funding.toFixed(4)}% — 소폭 양수. 롱 우위이나 과열 아님.`);
-    }else{
-      lines.push(`펀딩비율 ${d.funding.toFixed(4)}% — 소폭 음수. 숏 약간 우위.`);
-    }
+    const fv=d.funding.toFixed(4);
+    let fInterp="";
+    if(d.funding<-0.01){fInterp=`<b style="color:#7BC86C">▲ 숏스퀴즈 대기.</b> 숏이 수수료를 내는 상태(${fv}%). 이 구간에서 스팟 매수가 유입되면 공매도 강제청산 → 급등 트리거. 역사적으로 네거티브 펀딩 + 스팟 유입 = 가장 폭발적인 상승 패턴.`;bullCount++;}
+    else if(d.funding>0.03){fInterp=`<b style="color:#E8734A">▼ 롱 과열 경고.</b> 롱이 ${fv}% 수수료를 납부 중. 과도한 레버리지 매수 → 하락 시 연쇄 청산(롱스퀴즈) 리스크. 신규 롱 진입 위험 구간.`;bearCount++;}
+    else if(d.funding>0){fInterp=`펀딩 ${fv}% 소폭 양수. 롱 우위이나 과열 아님. 정상 범위.`;}
+    else{fInterp=`펀딩 ${fv}% 소폭 음수. 숏 약간 우위. 아직 극단적 수준은 아님.`;}
+    lines.push(`<b style="color:#FFD700">① FUNDING RATE</b> [${fv}%]<br>└ ${fInterp}`);
   }
 
-  // OI interpretation
+  // 2. OI
   if(d.oiPrev&&d.oiNow){
     const oiChg=((d.oiNow-d.oiPrev)/d.oiPrev*100);
-    if(oiChg>3){
-      lines.push(`OI 1h +${oiChg.toFixed(1)}% 급증 — 새 포지션 대거 진입. 방향 결정 시 변동성 폭발 가능.`);
-    }else if(oiChg<-3){
-      lines.push(`OI 1h ${oiChg.toFixed(1)}% 감소 — 포지션 정리 중. 청산 또는 이익실현.`);
-    }else{
-      lines.push(`OI 변화 ${oiChg.toFixed(1)}% — 안정적. 큰 포지션 변동 없음.`);
-    }
+    const oiStr=d.oi?d.oi.toLocaleString("en",{maximumFractionDigits:0}):"?";
+    let oiInterp="";
+    if(oiChg>5){oiInterp=`<b style="color:#FFD700">OI 급증 +${oiChg.toFixed(1)}%.</b> 대규모 새 포지션 진입. 가격 방향이 확정되면 이 포지션들이 연료가 되어 움직임 가속. 가격↑+OI↑=건강한 추세, 가격↓+OI↑=숏 베팅 증가.`;bullCount++;}
+    else if(oiChg<-5){oiInterp=`OI 급감 ${oiChg.toFixed(1)}%. 대규모 포지션 정리. 청산 또는 이익실현 진행 중. 변동성 축소 예상.`;bearCount++;}
+    else{oiInterp=`OI 변화 ${oiChg.toFixed(1)}%. 안정적. 시장 참여도에 큰 변화 없음.`;}
+    lines.push(`<b style="color:#00BFFF">② OPEN INTEREST</b> [${oiStr}]<br>└ ${oiInterp}`);
   }
 
-  // L/S Ratio interpretation
+  // 3. L/S Ratio
   if(d.lsRatio!==null){
-    if(d.lsRatio>1.5){
-      lines.push(`탑 트레이더 L/S ${d.lsRatio.toFixed(2)} — 롱 강세. 기관/고래가 상승에 베팅 중.`);
-      if(bias==="neutral")bias="long";
-    }else if(d.lsRatio<0.7){
-      lines.push(`탑 트레이더 L/S ${d.lsRatio.toFixed(2)} — 숏 강세. 기관/고래가 하락에 베팅 중.`);
-      if(bias==="neutral")bias="short";
-    }else{
-      lines.push(`탑 트레이더 L/S ${d.lsRatio.toFixed(2)} — 균형. 명확한 방향성 없음.`);
-    }
+    let lsInterp="";
+    if(d.lsRatio>1.5){lsInterp=`<b style="color:#7BC86C">▲ 탑 트레이더 롱 강세.</b> L/S ${d.lsRatio.toFixed(2)} — 기관/고래가 상승에 확신을 갖고 포지션 구축 중. 이 그룹의 승률은 개인 대비 높음.`;bullCount++;}
+    else if(d.lsRatio<0.7){lsInterp=`<b style="color:#E8734A">▼ 탑 트레이더 숏 강세.</b> L/S ${d.lsRatio.toFixed(2)} — 기관/고래가 하락에 베팅. 단, 이들이 틀릴 경우 강력한 숏스퀴즈 발생.`;bearCount++;}
+    else if(d.lsRatio>1.1){lsInterp=`탑 L/S ${d.lsRatio.toFixed(2)} — 약간 롱 우위. 극단적이지 않음.`;bullCount+=0.5;}
+    else if(d.lsRatio<0.9){lsInterp=`탑 L/S ${d.lsRatio.toFixed(2)} — 약간 숏 우위.`;bearCount+=0.5;}
+    else{lsInterp=`탑 L/S ${d.lsRatio.toFixed(2)} — 균형. 방향 확신 없는 관망 구간.`;}
+    const globalNote=d.globalLSR?` 전체 트레이더 L/S: ${d.globalLSR.toFixed(2)}. `+(d.globalLSR>d.lsRatio?"개인이 기관보다 더 롱 → 역지표 가능성":"기관이 개인보다 더 롱 → 스마트머니 방향 주목"):"";
+    lines.push(`<b style="color:#A87BD2">③ LONG/SHORT RATIO</b> [Top: ${d.lsRatio.toFixed(2)}]<br>└ ${lsInterp}${globalNote?'<br>└ '+globalNote:''}`);
   }
 
-  // CVD interpretation
+  // 4. CVD
   if(d.cvd!==undefined&&d.cvd!==null){
-    const cvdDir=d.cvd>0?"양수(매수 우위)":"음수(매도 우위)";
-    lines.push(`24h CVD ${cvdDir} — Taker 기준 ${d.cvd>0?"매수":"매도"} 거래량이 더 많았다.`);
-    if(d.recentCvd!==undefined){
-      const recent=d.recentCvd>0?"매수 가속":"매도 가속";
-      lines.push(`최근 4h CVD ${recent} — ${Math.abs(d.recentCvd).toFixed(0)} 차이.`);
-    }
+    let cvdInterp="";
+    if(d.cvd>0&&d.recentCvd>0){cvdInterp=`<b style="color:#7BC86C">▲ Taker 매수 주도 + 가속 중.</b> 24h CVD 양수 + 최근 4h도 매수 가속. 시장가 매수가 지속적으로 우위 → 실질적 매수 수요 확인.`;bullCount++;}
+    else if(d.cvd<0&&d.recentCvd<0){cvdInterp=`<b style="color:#E8734A">▼ Taker 매도 주도 + 가속.</b> 시장가 매도가 지속 우위. 급한 매도(패닉/청산)가 진행 중일 가능성.`;bearCount++;}
+    else if(d.cvd>0){cvdInterp=`24h CVD 양수(매수 우위)이나 최근 모멘텀은 둔화. 매수세 피로감 가능.`;}
+    else{cvdInterp=`24h CVD 음수(매도 우위)이나 최근 매도 감속. 바닥 형성 가능성.`;}
+    lines.push(`<b style="color:#7BC86C">④ CVD (Cumulative Volume Delta)</b> [${d.cvd>0?"+":""}${d.cvd.toFixed(0)}]<br>└ ${cvdInterp}`);
   }
 
-  // Combined signal
-  let bullCount=0,bearCount=0;
-  if(d.funding!==null&&d.funding<-0.005)bullCount++;
-  if(d.funding!==null&&d.funding>0.03)bearCount++;
-  if(d.lsRatio!==null&&d.lsRatio>1.3)bullCount++;
-  if(d.lsRatio!==null&&d.lsRatio<0.8)bearCount++;
-  if(d.cvd!==undefined&&d.cvd>0)bullCount++;
-  if(d.cvd!==undefined&&d.cvd<0)bearCount++;
-  if(d.oiPrev&&d.oiNow&&d.oiNow>d.oiPrev*1.02)bullCount++; // OI rising = conviction
+  // 5. Cross-indicator patterns
+  lines.push('<b style="color:#C8A84E">── 교차 패턴 분석 ──</b>');
+  if(d.funding<-0.005&&d.lsRatio>1.2&&d.cvd>0){
+    lines.push(`<b style="color:#7BC86C">🔥 숏스퀴즈 셋업 완성.</b> 네거티브 펀딩(숏 과밀) + 탑 트레이더 롱 우위 + Taker 매수 주도. 세 조건이 동시에 충족되면 폭발적 상승의 전조. 스팟 ETF 유입이나 대형 매수 주문이 트리거가 될 수 있음.`);
+    bullCount+=2;
+  }else if(d.funding>0.02&&d.lsRatio<0.9&&d.cvd<0){
+    lines.push(`<b style="color:#E8734A">⚠ 롱스퀴즈 경고.</b> 양수 과열 펀딩 + 숏 우위 + Taker 매도 주도. 레버리지 롱이 청산될 위험 구간.`);
+    bearCount+=2;
+  }else if(d.oiPrev&&d.oiNow&&d.oiNow>d.oiPrev*1.03&&d.cvd>0){
+    lines.push(`OI 증가 + CVD 양수 = 새 롱 포지션이 시장가로 진입 중. 추세 추종 매수 확인.`);
+    bullCount++;
+  }else if(d.oiPrev&&d.oiNow&&d.oiNow>d.oiPrev*1.03&&d.cvd<0){
+    lines.push(`OI 증가 + CVD 음수 = 새 숏 포지션 진입. 하락에 대한 확신이 커지는 중.`);
+    bearCount++;
+  }else{
+    lines.push(`명확한 교차 패턴 미감지. 개별 지표 방향이 분산되어 있음.`);
+  }
 
+  // 6. Verdict
+  lines.push('<b style="color:#C8A84E">── 종합 판정 ──</b>');
   if(bullCount>=3)bias="long";
   else if(bearCount>=3)bias="short";
   else if(bullCount>bearCount)bias="long";
   else if(bearCount>bullCount)bias="short";
 
-  lines.push(`종합: 매수 시그널 ${bullCount}개 / 매도 시그널 ${bearCount}개.`);
+  const verdictColor=bias==="long"?"#7BC86C":bias==="short"?"#E8734A":"#8A8060";
+  lines.push(`<b style="color:${verdictColor}">매수 시그널 ${Math.round(bullCount)}개 / 매도 시그널 ${Math.round(bearCount)}개.</b> `+(bias==="long"?"파생상품 구조가 상승 방향으로 정렬. 레버리지 축적 구간에서 방향 전환 시 급격한 움직임 예상.":bias==="short"?"파생상품 구조가 하락 편향. 레버리지 롱 청산 리스크 경계.":"파생상품 시장 방향 불명확. 명확한 쏠림 없음 — 이럴 때는 포지션 축소가 안전."));
 
-  return{bias,lines};
+  return{bias,lines:['<div style="line-height:1.8;font-size:10px">'+lines.join('<br style="margin-bottom:6px">')+'</div>']};
 }
 
 function renderExData(){
@@ -784,13 +860,11 @@ function renderExData(){
   // Interpretation
   const interp=interpExData(d);
   const biasLabel=interp.bias==="long"?"BULLISH":interp.bias==="short"?"BEARISH":"NEUTRAL";
-  const biasColor=interp.bias==="long"?"var(--green)":interp.bias==="short"?"var(--red)":"var(--text-dim)";
-  const biasBg=interp.bias==="long"?"rgba(123,200,108,0.1)":interp.bias==="short"?"rgba(232,115,74,0.1)":"rgba(138,128,96,0.1)";
   interpEl.innerHTML=`
-    <div class="ex-interp">
-      <div class="ex-interp-title">파생상품 구조 해석</div>
-      <span class="ex-interp-bias" style="color:${biasColor};background:${biasBg}">${biasLabel}</span>
-      <div class="ex-interp-body">${interp.lines.join(" ")}</div>
+    <div class="interp">
+      <div class="interp-label">다층 분석</div>
+      <span class="interp-bias ${interp.bias}">${biasLabel}</span>
+      <div class="interp-body">${interp.lines.join("<br>")}</div>
     </div>`;
 }
 
